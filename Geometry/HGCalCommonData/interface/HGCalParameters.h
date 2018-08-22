@@ -44,6 +44,7 @@ public:
   std::array<int,4> getID(unsigned int k) const;
 
   std::string                     name_;
+  int                             detectorType_;
   int                             nCells_;
   int                             nSectors_;
   std::vector<double>             cellSize_;
@@ -105,8 +106,11 @@ public:
   std::vector<int>                cellCoarse_;
   double                          waferR_;
   std::vector<int>                levelT_;
+  int                             levelZSide_;
   HGCalGeometryMode::GeometryMode mode_;
-  double                          slopeMin_;
+  std::vector<double>             slopeMin_;
+  std::vector<double>             zFrontMin_;
+  std::vector<double>             rMinFront_;
   layer_map                       copiesInLayers_;
   int                             nCellsFine_;
   int                             nCellsCoarse_;
@@ -120,7 +124,9 @@ public:
   std::vector<double>             cellThickness_;
   std::vector<double>             radius100to200_;
   std::vector<double>             radius200to300_;
+  int                             choiceType_;
   int                             nCornerCut_;
+  double                          fracAreaMin_;
   double                          zMinForRad_;
   std::vector<double>             radiusMixBoundary_;
   std::vector<int>                nPhiBinBH_;
@@ -128,12 +134,13 @@ public:
   std::vector<int>                firstModule_;
   std::vector<int>                lastModule_;
   std::vector<double>             slopeTop_;
-  std::vector<double>             zFront_;
+  std::vector<double>             zFrontTop_;
   std::vector<double>             rMaxFront_;
   std::vector<double>             zRanges_;
   double                          etaMinBH_;
   std::vector<int>                iEtaMinBH_;
   int                             firstLayer_;
+  int                             firstMixedLayer_;
   wafer_map                       wafersInLayers_;
   wafer_map                       typesInLayers_;
  

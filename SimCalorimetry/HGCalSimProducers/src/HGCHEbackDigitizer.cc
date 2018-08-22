@@ -12,8 +12,7 @@ using namespace hgc_digi;
 using namespace hgc_digi_utils;
 
 //
-template <class DFr>
-HGCHEbackDigitizer<DFr>::HGCHEbackDigitizer(const edm::ParameterSet &ps) : HGCDigitizerBase<DFr>(ps)
+HGCHEbackDigitizer::HGCHEbackDigitizer(const edm::ParameterSet &ps) : HGCDigitizerBase(ps)
 {
   edm::ParameterSet cfg = ps.getParameter<edm::ParameterSet>("digiCfg");
   keV2MIP_   = cfg.getParameter<double>("keV2MIP");
@@ -26,8 +25,7 @@ HGCHEbackDigitizer<DFr>::HGCHEbackDigitizer(const edm::ParameterSet &ps) : HGCDi
 }
 
 //
-template <class DFr>
-void HGCHEbackDigitizer<DFr>::runDigitizer(std::unique_ptr<HGCHEbackDigitizer::DColl> &digiColl,HGCSimHitDataAccumulator &simData,
+void HGCHEbackDigitizer::runDigitizer(std::unique_ptr<HGCalDigiCollection> &digiColl,HGCSimHitDataAccumulator &simData,
 				      const CaloSubdetectorGeometry* theGeom, const std::unordered_set<DetId>& validIds,
 				      uint32_t digitizationType, CLHEP::HepRandomEngine* engine)
 {
@@ -35,8 +33,7 @@ void HGCHEbackDigitizer<DFr>::runDigitizer(std::unique_ptr<HGCHEbackDigitizer::D
 }
 
 //
-template <class DFr>
-void HGCHEbackDigitizer<DFr>::runCaliceLikeDigitizer(std::unique_ptr<HGCHEbackDigitizer::DColl> &digiColl,HGCSimHitDataAccumulator &simData,
+void HGCHEbackDigitizer::runCaliceLikeDigitizer(std::unique_ptr<HGCalDigiCollection> &digiColl,HGCSimHitDataAccumulator &simData,
 						const CaloSubdetectorGeometry* theGeom, const std::unordered_set<DetId>& validIds,
 						CLHEP::HepRandomEngine* engine)
 {
@@ -71,7 +68,7 @@ void HGCHEbackDigitizer<DFr>::runCaliceLikeDigitizer(std::unique_ptr<HGCHEbackDi
 	  if(xTalk_*x!=1) nPixel=(uint32_t) std::max( nTotalPE_*(1.f-x)/(1.f-xTalk_*x), 0.f );
 
 	  //update signal
-	  nPixel = (uint32_t)std::max( CLHEP::RandGaussQ::shoot(engine,(double)nPixel,sdPixels_), 0. );
+	  if(sdPixels_ != 0) nPixel = (uint32_t)std::max( CLHEP::RandGaussQ::shoot(engine,(double)nPixel,sdPixels_), 0. );
 
 	  //convert to MIP again and saturate
           float totalMIPs(0.f), xtalk = 0.f;
@@ -83,13 +80,14 @@ void HGCHEbackDigitizer<DFr>::runCaliceLikeDigitizer(std::unique_ptr<HGCHEbackDi
           }
 
 	  //add noise (in MIPs)
-	  chargeColl[i] = totalMIPs+std::max( CLHEP::RandGaussQ::shoot(engine,0.,noise_MIP_), 0. );
+	  chargeColl[i] = totalMIPs;
+      if(noise_MIP_ != 0) chargeColl[i] += std::max( CLHEP::RandGaussQ::shoot(engine,0.,noise_MIP_), 0. );
 	  if(debug && cell.hit_info[0][i]>0)
 	    std::cout << "[runCaliceLikeDigitizer] xtalk=" << xtalk << " En=" << cell.hit_info[0][i] << " keV -> " << totalIniMIPs << " raw-MIPs -> " << chargeColl[i] << " digi-MIPs" << std::endl;
 	}
 
       //init a new data frame and run shaper
-      DFr newDataFrame( id );
+      HGCalDataFrame newDataFrame( id );
       this->myFEelectronics_->runTrivialShaper( newDataFrame, chargeColl, 1 );
 
       //prepare the output
@@ -98,11 +96,6 @@ void HGCHEbackDigitizer<DFr>::runCaliceLikeDigitizer(std::unique_ptr<HGCHEbackDi
 }
 
 //
-template <class DFr>
-HGCHEbackDigitizer<DFr>::~HGCHEbackDigitizer()
+HGCHEbackDigitizer::~HGCHEbackDigitizer()
 {
 }
-
-//explicit instantiations
-template class HGCHEbackDigitizer<HGCBHDataFrame>;
-template class HGCHEbackDigitizer<HGCHEDataFrame>;

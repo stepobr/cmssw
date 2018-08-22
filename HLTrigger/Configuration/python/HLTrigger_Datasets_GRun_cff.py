@@ -20,6 +20,21 @@ streamParkingBPH1_datasetParkingBPH1_selector.triggerConditions = cms.vstring(
     'HLT_Mu9_IP6_part0_v3'
 )
 
+from HLTrigger.HLTfilters.triggerResultsFilter_cfi import triggerResultsFilter as streamParkingBPH1_datasetParkingBPHPromptCSCS_selector
+streamParkingBPH1_datasetParkingBPHPromptCSCS_selector.hltResults = cms.InputTag('TriggerResults', '', 'HLT')
+streamParkingBPH1_datasetParkingBPHPromptCSCS_selector.l1tResults = cms.InputTag('')
+streamParkingBPH1_datasetParkingBPHPromptCSCS_selector.throw      = cms.bool(False)
+streamParkingBPH1_datasetParkingBPHPromptCSCS_selector.triggerConditions = cms.vstring(
+    'HLT_Mu12_IP6_ToCSCS_v1', 
+    'HLT_Mu7_IP4_ToCSCS_v1', 
+    'HLT_Mu8_IP3_ToCSCS_v1', 
+    'HLT_Mu8_IP5_ToCSCS_v1', 
+    'HLT_Mu8_IP6_ToCSCS_v1', 
+    'HLT_Mu9_IP4_ToCSCS_v1', 
+    'HLT_Mu9_IP5_ToCSCS_v1', 
+    'HLT_Mu9_IP6_ToCSCS_v1'
+)
+
 
 # stream ParkingBPH2
 
@@ -177,7 +192,7 @@ streamPhysicsCommissioning_datasetNoBPTX_selector.hltResults = cms.InputTag('Tri
 streamPhysicsCommissioning_datasetNoBPTX_selector.l1tResults = cms.InputTag('')
 streamPhysicsCommissioning_datasetNoBPTX_selector.throw      = cms.bool(False)
 streamPhysicsCommissioning_datasetNoBPTX_selector.triggerConditions = cms.vstring(
-    'HLT_CDC_L2cosmic_5_er1p0_v1', 
+    'HLT_CDC_L2cosmic_10_er1p0_v1', 
     'HLT_CDC_L2cosmic_5p5_er1p0_v1', 
     'HLT_L2Mu10_NoVertex_NoBPTX3BX_v5', 
     'HLT_L2Mu10_NoVertex_NoBPTX_v6', 
@@ -261,8 +276,10 @@ streamPhysicsEGamma_datasetEGamma_selector.triggerConditions = cms.vstring(
     'HLT_Ele27_Ele37_CaloIdL_MW_v4', 
     'HLT_Ele27_WPTight_Gsf_v16', 
     'HLT_Ele28_HighEta_SC20_Mass55_v13', 
+    'HLT_Ele28_WPTight_Gsf_v1', 
     'HLT_Ele28_eta2p1_WPTight_Gsf_HT150_v13', 
     'HLT_Ele300_CaloIdVT_GsfTrkIdT_v13', 
+    'HLT_Ele30_WPTight_Gsf_v1', 
     'HLT_Ele30_eta2p1_WPTight_Gsf_CentralPFJet35_EleCleaned_v13', 
     'HLT_Ele32_WPTight_Gsf_L1DoubleEG_v9', 
     'HLT_Ele32_WPTight_Gsf_v15', 
@@ -419,14 +436,23 @@ streamPhysicsHadronsTaus_datasetBTagMu_selector.hltResults = cms.InputTag('Trigg
 streamPhysicsHadronsTaus_datasetBTagMu_selector.l1tResults = cms.InputTag('')
 streamPhysicsHadronsTaus_datasetBTagMu_selector.throw      = cms.bool(False)
 streamPhysicsHadronsTaus_datasetBTagMu_selector.triggerConditions = cms.vstring(
+    'HLT_BTagMu_AK4DiJet110_Mu5_noalgo_v13', 
     'HLT_BTagMu_AK4DiJet110_Mu5_v13', 
+    'HLT_BTagMu_AK4DiJet170_Mu5_noalgo_v12', 
     'HLT_BTagMu_AK4DiJet170_Mu5_v12', 
+    'HLT_BTagMu_AK4DiJet20_Mu5_noalgo_v13', 
     'HLT_BTagMu_AK4DiJet20_Mu5_v13', 
+    'HLT_BTagMu_AK4DiJet40_Mu5_noalgo_v13', 
     'HLT_BTagMu_AK4DiJet40_Mu5_v13', 
+    'HLT_BTagMu_AK4DiJet70_Mu5_noalgo_v13', 
     'HLT_BTagMu_AK4DiJet70_Mu5_v13', 
+    'HLT_BTagMu_AK4Jet300_Mu5_noalgo_v12', 
     'HLT_BTagMu_AK4Jet300_Mu5_v12', 
+    'HLT_BTagMu_AK8DiJet170_Mu5_noalgo_v9', 
     'HLT_BTagMu_AK8DiJet170_Mu5_v9', 
+    'HLT_BTagMu_AK8Jet170_DoubleMu5_noalgo_v2', 
     'HLT_BTagMu_AK8Jet170_DoubleMu5_v2', 
+    'HLT_BTagMu_AK8Jet300_Mu5_noalgo_v12', 
     'HLT_BTagMu_AK8Jet300_Mu5_v12'
 )
 
@@ -687,7 +713,7 @@ streamPhysicsMuons_datasetCharmonium_selector.hltResults = cms.InputTag('Trigger
 streamPhysicsMuons_datasetCharmonium_selector.l1tResults = cms.InputTag('')
 streamPhysicsMuons_datasetCharmonium_selector.throw      = cms.bool(False)
 streamPhysicsMuons_datasetCharmonium_selector.triggerConditions = cms.vstring(
-    'HLT_Dimuon0_Jpsi3p5_Muon2_v6', 
+    'HLT_Dimuon0_Jpsi3p5_Muon2_v5', 
     'HLT_Dimuon0_Jpsi_L1_4R_0er1p5R_v7', 
     'HLT_Dimuon0_Jpsi_L1_NoOS_v7', 
     'HLT_Dimuon0_Jpsi_NoVertexing_L1_4R_0er1p5R_v7', 
@@ -726,11 +752,15 @@ streamPhysicsMuons_datasetDoubleMuon_selector.hltResults = cms.InputTag('Trigger
 streamPhysicsMuons_datasetDoubleMuon_selector.l1tResults = cms.InputTag('')
 streamPhysicsMuons_datasetDoubleMuon_selector.throw      = cms.bool(False)
 streamPhysicsMuons_datasetDoubleMuon_selector.triggerConditions = cms.vstring(
+    'HLT_DoubleL2Mu23NoVtx_2Cha_CosmicSeed_NoL2Matched_v2', 
     'HLT_DoubleL2Mu23NoVtx_2Cha_CosmicSeed_v2', 
+    'HLT_DoubleL2Mu23NoVtx_2Cha_NoL2Matched_v2', 
     'HLT_DoubleL2Mu23NoVtx_2Cha_v2', 
     'HLT_DoubleL2Mu25NoVtx_2Cha_CosmicSeed_Eta2p4_v2', 
+    'HLT_DoubleL2Mu25NoVtx_2Cha_CosmicSeed_NoL2Matched_v2', 
     'HLT_DoubleL2Mu25NoVtx_2Cha_CosmicSeed_v2', 
     'HLT_DoubleL2Mu25NoVtx_2Cha_Eta2p4_v2', 
+    'HLT_DoubleL2Mu25NoVtx_2Cha_NoL2Matched_v2', 
     'HLT_DoubleL2Mu25NoVtx_2Cha_v2', 
     'HLT_DoubleL2Mu30NoVtx_2Cha_CosmicSeed_Eta2p4_v2', 
     'HLT_DoubleL2Mu30NoVtx_2Cha_Eta2p4_v2', 

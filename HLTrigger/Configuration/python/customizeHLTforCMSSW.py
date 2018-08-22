@@ -18,25 +18,25 @@ from HLTrigger.Configuration.common import *
 #     return process
 
 
-from RecoParticleFlow.PFClusterProducer.particleFlowClusterHBHE_cfi import recHitEnergyNorms2018,seedFinderThresholdsByDetector2018,initialClusteringStepThresholdsByDetector2018,logWeightDenominatorByDetector2018
-from RecoParticleFlow.PFClusterProducer.particleFlowClusterHCAL_cfi import logWeightDenominatorByDetector2018 as logWeightDenominatorByDetector2018_HCAL
-from RecoParticleFlow.PFClusterProducer.particleFlowRecHitHBHE_cfi import cuts2018
+from RecoParticleFlow.PFClusterProducer.particleFlowClusterHBHE_cfi import _seedingThresholdsHEphase1, _thresholdsHEphase1
+from RecoParticleFlow.PFClusterProducer.particleFlowClusterHCAL_cfi import _thresholdsHEphase1 as _thresholdsHEphase1HCAL
+from RecoParticleFlow.PFClusterProducer.particleFlowRecHitHBHE_cfi import _thresholdsHEphase1 as _thresholdsHEphase1Rec
 
 def customiseForUncollapsed(process):
     for producer in producers_by_type(process, "PFClusterProducer"):
         if producer.seedFinder.thresholdsByDetector[1].detector.value() == 'HCAL_ENDCAP':
-            producer.pfClusterBuilder.recHitEnergyNorms                  = recHitEnergyNorms2018
-            producer.seedFinder.thresholdsByDetector                     = seedFinderThresholdsByDetector2018
-            producer.initialClusteringStep.thresholdsByDetector          = initialClusteringStepThresholdsByDetector2018
-            producer.pfClusterBuilder.positionCalc.logWeightDenominatorByDetector         = logWeightDenominatorByDetector2018
-            producer.pfClusterBuilder.allCellsPositionCalc.logWeightDenominatorByDetector = logWeightDenominatorByDetector2018
+            producer.seedFinder.thresholdsByDetector[1].seedingThreshold              = _seedingThresholdsHEphase1
+            producer.initialClusteringStep.thresholdsByDetector[1].gatheringThreshold = _thresholdsHEphase1
+            producer.pfClusterBuilder.recHitEnergyNorms[1].recHitEnergyNorm           = _thresholdsHEphase1
+            producer.pfClusterBuilder.positionCalc.logWeightDenominatorByDetector[1].logWeightDenominator = _thresholdsHEphase1
+            producer.pfClusterBuilder.allCellsPositionCalc.logWeightDenominatorByDetector[1].logWeightDenominator = _thresholdsHEphase1
 
     for producer in producers_by_type(process, "PFMultiDepthClusterProducer"):
-        producer.pfClusterBuilder.allCellsPositionCalc.logWeightDenominatorByDetector = logWeightDenominatorByDetector2018_HCAL
+        producer.pfClusterBuilder.allCellsPositionCalc.logWeightDenominatorByDetector[1].logWeightDenominator = _thresholdsHEphase1HCAL
     
     for producer in producers_by_type(process, "PFRecHitProducer"):
         if producer.producers[0].name.value() == 'PFHBHERecHitCreator':
-            producer.producers[0].qualityTests[0].cuts = cuts2018
+            producer.producers[0].qualityTests[0].cuts[1].threshold = _thresholdsHEphase1Rec
     
     for producer in producers_by_type(process, "CaloTowersCreator"):
         producer.HcalPhase     = cms.int32(1)
@@ -188,11 +188,35 @@ def customiseForEcalTestPR22254thresholdC(process):
 
 
 
+def customizeHLTForL3OIPR24267(process):
+   for seedproducer in producers_by_type(process, "TSGForOI"):
+       if "hltIterL3OISeedsFromL2Muons" == seedproducer.label():
+           process.hltIterL3OISeedsFromL2Muons = cms.EDProducer("TSGForOIFromL2")
+       if "hltIterL3OISeedsFromL2MuonsOpenMu" == seedproducer.label():
+           process.hltIterL3OISeedsFromL2MuonsOpenMu = cms.EDProducer("TSGForOIFromL2")
+           process.hltIterL3OISeedsFromL2MuonsOpenMu.src = cms.InputTag( 'hltL2MuonsOpenMu','UpdatedAtVtx' )
+       if "hltIterL3OISeedsFromL2MuonsNoVtx" == seedproducer.label():
+           process.hltIterL3OISeedsFromL2MuonsNoVtx = cms.EDProducer("TSGForOIFromL2")
+           process.hltIterL3OISeedsFromL2MuonsNoVtx.src = cms.InputTag( 'hltL2Muons' )
+
+
+   for trackproducer in producers_by_type(process, "CkfTrackCandidateMaker"):
+       if "hltIterL3OITrackCandidates" in trackproducer.label():
+           trackproducer.reverseTrajectories  =cms.bool(True)
+
+
+   return process
+
+
+
+
 
 # CMSSW version specific customizations
 def customizeHLTforCMSSW(process, menuType="GRun"):
 
     # add call to action function in proper order: newest last!
     # process = customiseFor12718(process)
+
+    process = customizeHLTForL3OIPR24267(process)
 
     return process
