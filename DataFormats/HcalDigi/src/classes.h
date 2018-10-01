@@ -10,6 +10,7 @@
 #include "DataFormats/HcalDigi/interface/HcalLaserDigi.h"
 #include "DataFormats/HcalDigi/interface/HcalTTPDigi.h"
 #include "DataFormats/HcalDigi/interface/HcalUMNioDigi.h"
+#include "DataFormats/HcalDigi/interface/HcalUHTRhistogramDigiCollection.h"
 #include "DataFormats/Common/interface/Wrapper.h"
 
 // dummy structs to ensure backward compatibility
@@ -25,6 +26,7 @@ namespace DataFormats_HcalDigi {
     std::vector<HcalQIESample> vQIE_;
     std::vector<HcalUpgradeQIESample> vUQIE_;
     std::vector<HcalTriggerPrimitiveSample> vTPS_;
+    std::vector<HcalDetId> vDI_;
     
     edm::SortedCollection<HBHEDataFrame> vHBHE_;
     edm::SortedCollection<HODataFrame> vHO_;
@@ -79,6 +81,7 @@ namespace DataFormats_HcalDigi {
     edm::Wrapper<HFUpgradeDigiCollection> theUHFw_;
     edm::Wrapper<QIE10DigiCollection> theQIE10w_;
     edm::Wrapper<QIE11DigiCollection> theQIE11w_;
+    edm::Wrapper<HcalUHTRhistogramDigiCollection> theUHTRw_;
   };
 }
 
