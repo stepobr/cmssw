@@ -1,4 +1,5 @@
 #include "DataFormats/HcalDigi/interface/HcalTriggerPrimitiveDigi.h"
+#include "DataFormats/HcalDigi/interface/HcalTriggerPrimitiveSample.h"
 
 
 HcalTriggerPrimitiveDigi::HcalTriggerPrimitiveDigi() : size_(0), hcalPresamples_(0) {
