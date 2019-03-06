@@ -87,8 +87,8 @@ namespace hcaltb {
 		 sp_dblmap["REEL"],//double reel_counter
 		 sp_dblmap["MOTOR_CURRENT"],//double motor_current
 		 sp_dblmap["MOTOR_VOLTAGE"],//double motor_voltage
-		 sp_dblmap["DRIVER_ID"],//double driver_id
-    		 sp_dblmap["SOURCE_ID"],//double source_id
+		 -1,//double driver_id
+     -1,//double source_id
      sp_strmap["CURRENT_TUBENAME_FROM_COORD"],
      sp_strmap["INDEX_DESCRIPTION"],
      sp_strmap["LAST_COMMAND"],
