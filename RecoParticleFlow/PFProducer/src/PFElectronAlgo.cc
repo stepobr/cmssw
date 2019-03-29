@@ -5,7 +5,6 @@
 #include "RecoParticleFlow/PFProducer/interface/PFElectronAlgo.h"
 #include "RecoParticleFlow/PFProducer/interface/PFMuonAlgo.h"
 #include "RecoParticleFlow/PFTracking/interface/PFTrackAlgoTools.h"
-//#include "DataFormats/ParticleFlowReco/interface/PFBlockElementGsfTrack.h"
 #include "DataFormats/ParticleFlowReco/interface/PFBlockElementCluster.h"
 #include "DataFormats/ParticleFlowReco/interface/PFBlockElementBrem.h"
 #include "DataFormats/ParticleFlowReco/interface/PFRecHitFraction.h"
@@ -15,7 +14,6 @@
 #include "DataFormats/GsfTrackReco/interface/GsfTrack.h"
 #include "DataFormats/GsfTrackReco/interface/GsfTrackFwd.h"
 #include "RecoParticleFlow/PFProducer/interface/PFElectronExtraEqual.h"
-#include "RecoParticleFlow/PFProducer/interface/GsfElectronEqual.h"
 #include "RecoParticleFlow/PFClusterTools/interface/PFEnergyCalibration.h"
 #include "RecoParticleFlow/PFClusterTools/interface/PFSCEnergyCalibration.h"
 #include "RecoParticleFlow/PFClusterTools/interface/PFEnergyResolution.h"
@@ -32,8 +30,8 @@ using namespace std;
 using namespace reco;
 PFElectronAlgo::PFElectronAlgo(const double mvaEleCut,
 			       string mvaWeightFileEleID,
-			       const boost::shared_ptr<PFSCEnergyCalibration>& thePFSCEnergyCalibration,
-			       const boost::shared_ptr<PFEnergyCalibration>& thePFEnergyCalibration,
+			       const std::shared_ptr<PFSCEnergyCalibration>& thePFSCEnergyCalibration,
+			       const std::shared_ptr<PFEnergyCalibration>& thePFEnergyCalibration,
 			       bool applyCrackCorrections,
 			       bool usePFSCEleCalib,
 			       bool useEGElectrons,
@@ -287,7 +285,7 @@ bool PFElectronAlgo::SetLinks(const reco::PFBlockRef&  blockRef,
 	         && nexhits == 0 && trackIsFromPrimaryVertex) {
 		localactive[ecalKf_index] = false;
 	      } else {
-		fifthStepKfTrack_.push_back(make_pair(ecalKf_index,trackIs[iEle]));
+		fifthStepKfTrack_.emplace_back(ecalKf_index,trackIs[iEle]);
 	      }
 	    }
 	  }
@@ -721,7 +719,7 @@ bool PFElectronAlgo::SetLinks(const reco::PFBlockRef&  blockRef,
 			   <<", " <<  clusterRef->position().phi() << endl;
 		 
 		    GsfElemIndex.push_back(ecalConvElems.begin()->second);
-		    convGsfTrack_.push_back(make_pair(ecalConvElems.begin()->second,gsfIs[iConv]));
+		    convGsfTrack_.emplace_back(ecalConvElems.begin()->second,gsfIs[iConv]);
 		    localactive[ecalConvElems.begin()->second] = false;
 		    
 		  }
@@ -2477,8 +2475,8 @@ void PFElectronAlgo::SetCandidates(const reco::PFBlockRef&  blockRef,
 	// By-pass the mva is the electron has been pre-selected 
 	bool bypassmva=false;
 	if(useEGElectrons_) {
-	  GsfElectronEqual myEqual(RefGSF);
-	  std::vector<reco::GsfElectron>::const_iterator itcheck=find_if(theGsfElectrons_->begin(),theGsfElectrons_->end(),myEqual);
+	  auto itcheck = find_if( theGsfElectrons_->begin(),theGsfElectrons_->end(),
+                              [&RefGSF](const auto& ele) {return (ele.gsfTrack() == RefGSF);} );
 	  if(itcheck!=theGsfElectrons_->end()) {
 	    if(BDToutput_[cgsf] >= -1.)  {
 	      // bypass the mva only if the reconstruction went fine
@@ -2564,8 +2562,8 @@ void PFElectronAlgo::SetActive(const reco::PFBlockRef&  blockRef,
     // lock only the elements that pass the BDT cut
     bool bypassmva=false;
     if(useEGElectrons_) {
-      GsfElectronEqual myEqual(RefGSF);
-      std::vector<reco::GsfElectron>::const_iterator itcheck=find_if(theGsfElectrons_->begin(),theGsfElectrons_->end(),myEqual);
+      auto itcheck = find_if( theGsfElectrons_->begin(),theGsfElectrons_->end(),
+                              [&RefGSF](const auto& ele) {return (ele.gsfTrack() == RefGSF);} );
       if(itcheck!=theGsfElectrons_->end()) {
 	if(BDToutput_[cgsf] >= -1.) 
 	  bypassmva=true;

@@ -42,7 +42,7 @@ void FEConfigLUTGroupDat::prepareWrite()
 		      "VALUES (:lut_conf_id, :group_id, "
 		      ":lut_id, :lut_value )" );
   } catch (SQLException &e) {
-    throw(std::runtime_error(std::string("FEConfigLUTGroupDat::prepareWrite():  ")+getOraMessage(&e)));
+    throw(std::runtime_error(std::string("FEConfigLUTGroupDat::prepareWrite():  ")+e.getMessage()));
   }
 }
 
@@ -116,7 +116,7 @@ void FEConfigLUTGroupDat::writeDB(const EcalLogicID* ecid, const FEConfigLUTGrou
 
 
   } catch (SQLException &e) {
-    throw(std::runtime_error(std::string("FEConfigLUTGroupDat::writeArrayDB():  ")+getOraMessage(&e)));
+    throw(std::runtime_error(std::string("FEConfigLUTGroupDat::writeArrayDB():  ")+e.getMessage()));
   }
 }
 
@@ -142,7 +142,7 @@ void FEConfigLUTGroupDat::fetchData(map< EcalLogicID, FEConfigLUTGroupDat >* fil
     m_readStmt->setInt(1, iconfID);
     ResultSet* rset = m_readStmt->executeQuery();
 
-    FEConfigLUTGroupDat* dat(nullptr);
+    FEConfigLUTGroupDat dat;
     std::pair< EcalLogicID, FEConfigLUTGroupDat > p;
 
 
@@ -158,22 +158,21 @@ void FEConfigLUTGroupDat::fetchData(map< EcalLogicID, FEConfigLUTGroupDat >* fil
       if(il==0){
 	
 	p.first = EcalLogicID( "Group_id",  ig );   // a dummy logic_id
-	dat=new FEConfigLUTGroupDat();
-	dat->setLUTGroupId( ig );
-	dat->setLUTValue( il, ival );  
+	dat = FEConfigLUTGroupDat();
+	dat.setLUTGroupId( ig );
+	dat.setLUTValue( il, ival );  
       } else {
-	dat->setLUTValue( il, ival );
+	dat.setLUTValue( il, ival );
       }
 
       if(il==(nrows-1)){
 
-	p.second = *dat;
+	p.second = dat;
 	fillMap->insert(p);
-	 delete dat;
       }
     }
   } catch (SQLException &e) {
-    throw(std::runtime_error(std::string("FEConfigLUTGroupDat::fetchData:  ")+getOraMessage(&e)));
+    throw(std::runtime_error(std::string("FEConfigLUTGroupDat::fetchData:  ")+e.getMessage()));
   }
 }
 
@@ -265,6 +264,6 @@ void FEConfigLUTGroupDat::writeArrayDB(const std::map< EcalLogicID, FEConfigLUTG
 
 
   } catch (SQLException &e) {
-    throw(std::runtime_error(std::string("FEConfigLUTGroupDat::writeArrayDB():  ")+getOraMessage(&e)));
+    throw(std::runtime_error(std::string("FEConfigLUTGroupDat::writeArrayDB():  ")+e.getMessage()));
   }
 }

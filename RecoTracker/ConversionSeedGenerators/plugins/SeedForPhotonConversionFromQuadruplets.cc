@@ -46,7 +46,7 @@ SeedForPhotonConversionFromQuadruplets::SeedForPhotonConversionFromQuadruplets(e
 {
   std::string comparitorName = SeedComparitorPSet.getParameter<std::string>("ComponentName");
   if(comparitorName != "none") {
-    theComparitor.reset(SeedComparitorFactory::get()->create( comparitorName, SeedComparitorPSet, iC));
+    theComparitor = std::unique_ptr<SeedComparitor>{SeedComparitorFactory::get()->create( comparitorName, SeedComparitorPSet, iC)};
   }
 }
 
@@ -1056,7 +1056,7 @@ double SeedForPhotonConversionFromQuadruplets::getSqrEffectiveErrorOnZ(const See
 
 bool SeedForPhotonConversionFromQuadruplets::similarQuadExist(Quad & thisQuad, std::vector<Quad>& quadV){
 
-  BOOST_FOREACH( Quad quad, quadV )
+  for(auto const& quad : quadV )
     {
       double dx = thisQuad.x-quad.x;
       double dy = thisQuad.y-quad.y;

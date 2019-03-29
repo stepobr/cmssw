@@ -5,7 +5,7 @@
 #include "DetectorDescription/Core/interface/DDName.h"
 #include "DetectorDescription/Core/interface/DDSolid.h"
 #include "DetectorDescription/Core/interface/DDTransform.h"
-#include "DetectorDescription/Core/interface/DDUnits.h"
+#include "DataFormats/Math/interface/GeantUnits.h"
 #include "DetectorDescription/Parser/src/DDDividedGeometryObject.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/Utilities/interface/Exception.h"
@@ -18,7 +18,7 @@
 
 class DDCompactView;
 
-using namespace dd::operators;
+using namespace geant_units::operators;
 
 DDDividedPolyhedraRho::DDDividedPolyhedraRho( const DDDivision& div, DDCompactView* cpv )
   : DDDividedGeometryObject( div, cpv )
@@ -220,16 +220,13 @@ DDDividedPolyhedraPhi::makeDDTranslation( const int copyNo ) const
 DDRotation
 DDDividedPolyhedraPhi::makeDDRotation( const int copyNo ) const
 {
-
+  DDRotation myddrot; // sets to identity.
   double posi = ( copyNo - 1 ) * compWidth_;
-  
-  //  ChangeRotMatrix( physVol, -posi );
-  DDRotationMatrix* rotMat = changeRotMatrix( posi);
-  // how to name the rotation??
-  // i do not like this...
-  DDName ddrotname(div_.parent().ddname().name() + "_DIVCHILD_ROT" + std::to_string(copyNo),
-		   div_.parent().ddname().ns());
-  DDRotation myddrot = DDrot(ddrotname, rotMat);
+  DDName ddrotname( div_.parent().ddname().name() +
+		    "_DIVCHILD_ROT" + std::to_string( copyNo ),
+		    div_.parent().ddname().ns());
+  myddrot = DDrot( ddrotname, changeRotMatrix( posi ));
+
   return myddrot;
 }
 

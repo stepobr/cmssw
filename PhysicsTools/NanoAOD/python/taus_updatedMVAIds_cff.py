@@ -15,7 +15,6 @@ patTauDiscriminationByIsolationMVArun2v1DBoldDMwLTraw = patDiscriminationByIsola
    loadMVAfromDB = cms.bool(True),
    mvaName = cms.string("RecoTauTag_tauIdMVAIsoDBoldDMwLT2017v2"), # name of the training you want to use
    mvaOpt = cms.string("DBoldDMwLTwGJ"), # option you want to use for your training (i.e., which variables are used to compute the BDT score)
-   requireDecayMode = cms.bool(True),
    verbosity = cms.int32(0)
 )
 # VVLoose WP
@@ -71,7 +70,6 @@ patTauDiscriminationByIsolationMVArun2v1DBnewDMwLTraw = patDiscriminationByIsola
    loadMVAfromDB = cms.bool(True),
    mvaName = cms.string("RecoTauTag_tauIdMVAIsoDBnewDMwLT2017v2"), # name of the training you want to use
    mvaOpt = cms.string("DBnewDMwLTwGJ"), # option you want to use for your training (i.e., which variables are used to compute the BDT score)
-   requireDecayMode = cms.bool(True),
    verbosity = cms.int32(0)
 )
 # VVLoose WP
@@ -127,7 +125,6 @@ patTauDiscriminationByIsolationMVArun2v1DBoldDMdR0p3wLTraw = patDiscriminationBy
    loadMVAfromDB = cms.bool(True),
    mvaName = cms.string("RecoTauTag_tauIdMVAIsoDBoldDMdR0p3wLT2017v2"), # name of the training you want to use
    mvaOpt = cms.string("DBoldDMwLTwGJ"), # option you want to use for your training (i.e., which variables are used to compute the BDT score)
-   requireDecayMode = cms.bool(True),
    srcChargedIsoPtSum = cms.string('chargedIsoPtSumdR03'),
    srcFootprintCorrection = cms.string('footprintCorrectiondR03'),
    srcNeutralIsoPtSum = cms.string('neutralIsoPtSumdR03'),
@@ -189,7 +186,6 @@ patTauDiscriminationByIsolationMVArun2v1DBoldDMwLTraw2017v1 = patDiscriminationB
    loadMVAfromDB = cms.bool(True),
    mvaName = cms.string("RecoTauTag_tauIdMVAIsoDBoldDMwLT2017v1"), # name of the training you want to use
    mvaOpt = cms.string("DBoldDMwLTwGJ"), # option you want to use for your training (i.e., which variables are used to compute the BDT score)
-   requireDecayMode = cms.bool(True),
    verbosity = cms.int32(0)
 )
 # VVLoose WP
@@ -246,7 +242,6 @@ patTauDiscriminationByIsolationMVArun2v1DBoldDMwLTraw2015 = patDiscriminationByI
    loadMVAfromDB = cms.bool(True),
    mvaName = cms.string("RecoTauTag_tauIdMVADBoldDMwLTv1"), # name of the training you want to use
    mvaOpt = cms.string("DBoldDMwLT"), # option you want to use for your training (i.e., which variables are used to compute the BDT score)
-   requireDecayMode = cms.bool(True),
    verbosity = cms.int32(0)
 )
 # VLoose WP
@@ -295,24 +290,25 @@ patTauDiscriminationByIsolationMVArun2v1DBoldDMwLT2015Seq = cms.Sequence(
 ### FIXME: add other tau-Ids when ready
 
 ### put all new MVA tau-Id stuff to one Sequence
-patTauMVAIDsSeq = cms.Sequence(
+_patTauMVAIDsSeq2017v2 = cms.Sequence(
     patTauDiscriminationByIsolationMVArun2v1DBoldDMwLTSeq
     +patTauDiscriminationByIsolationMVArun2v1DBnewDMwLTSeq
     +patTauDiscriminationByIsolationMVArun2v1DBoldDMdR0p3wLTSeq
 )
-_patTauMVAIDsSeqWith2017v1 = patTauMVAIDsSeq.copy()
+patTauMVAIDsSeq = _patTauMVAIDsSeq2017v2.copy()
+patTauMVAIDsSeq += patTauDiscriminationByIsolationMVArun2v1DBoldDMwLT2015Seq
+
+_patTauMVAIDsSeqWith2017v1 = _patTauMVAIDsSeq2017v2.copy()
 _patTauMVAIDsSeqWith2017v1 += patTauDiscriminationByIsolationMVArun2v1DBoldDMwLT2017v1Seq
 for era in [eras.run2_nanoAOD_94XMiniAODv1,eras.run2_nanoAOD_92X]:
     era.toReplaceWith(patTauMVAIDsSeq,_patTauMVAIDsSeqWith2017v1)
-_patTauMVAIDsSeqWith2015 = patTauMVAIDsSeq.copy()
-_patTauMVAIDsSeqWith2015 += patTauDiscriminationByIsolationMVArun2v1DBoldDMwLT2015Seq
-for era in [eras.run2_nanoAOD_94XMiniAODv2, eras.run2_nanoAOD_94X2016]:
-    era.toReplaceWith(patTauMVAIDsSeq, _patTauMVAIDsSeqWith2015)
 
 # embed new MVA tau-Ids into new tau collection
 slimmedTausUpdated = cms.EDProducer("PATTauIDEmbedder",
     src = cms.InputTag('slimmedTaus'),
-    tauIDSources = cms.PSet(
+    tauIDSources = cms.PSet() # PSet defined below in era dependent way
+)
+_tauIDSources2017v2 = cms.PSet(
         #oldDM
         byIsolationMVArun2v1DBoldDMwLTraw2017v2 = cms.InputTag('patTauDiscriminationByIsolationMVArun2v1DBoldDMwLTraw'),
         byVVLooseIsolationMVArun2v1DBoldDMwLT2017v2 = cms.InputTag('patTauDiscriminationByVVLooseIsolationMVArun2v1DBoldDMwLT'),
@@ -340,7 +336,6 @@ slimmedTausUpdated = cms.EDProducer("PATTauIDEmbedder",
         byTightIsolationMVArun2v1DBdR03oldDMwLT2017v2 = cms.InputTag('patTauDiscriminationByTightIsolationMVArun2v1DBoldDMdR0p3wLT'),
         byVTightIsolationMVArun2v1DBdR03oldDMwLT2017v2 = cms.InputTag('patTauDiscriminationByVTightIsolationMVArun2v1DBoldDMdR0p3wLT'),
         byVVTightIsolationMVArun2v1DBdR03oldDMwLT2017v2 = cms.InputTag('patTauDiscriminationByVVTightIsolationMVArun2v1DBoldDMdR0p3wLT'),
-    )
 )
 _tauIDSources2017v1 = cms.PSet(
     byIsolationMVArun2v1DBoldDMwLTraw2017v1 = cms.InputTag('patTauDiscriminationByIsolationMVArun2v1DBoldDMwLTraw2017v1'),
@@ -353,7 +348,7 @@ _tauIDSources2017v1 = cms.PSet(
     byVVTightIsolationMVArun2v1DBoldDMwLT2017v1 = cms.InputTag('patTauDiscriminationByVVTightIsolationMVArun2v1DBoldDMwLT2017v1')
 )
 _tauIDSourcesWith2017v1 = cms.PSet(
-    slimmedTausUpdated.tauIDSources.clone(),
+    _tauIDSources2017v2.clone(),
     _tauIDSources2017v1
 )
 _tauIDSources2015 = cms.PSet(
@@ -366,19 +361,15 @@ _tauIDSources2015 = cms.PSet(
     byVVTightIsolationMVArun2v1DBoldDMwLT2015 = cms.InputTag('patTauDiscriminationByVVTightIsolationMVArun2v1DBoldDMwLT2015')
 )
 _tauIDSourcesWith2015 = cms.PSet(
-    slimmedTausUpdated.tauIDSources.clone(),
+    _tauIDSources2017v2.clone(),
     _tauIDSources2015
 )
+slimmedTausUpdated.tauIDSources=_tauIDSourcesWith2015
 
 for era in [eras.run2_nanoAOD_94XMiniAODv1,eras.run2_nanoAOD_92X]:
     era.toModify(slimmedTausUpdated,
                  tauIDSources = _tauIDSourcesWith2017v1
     )
-
-for era in [eras.run2_nanoAOD_94X2016, eras.run2_nanoAOD_94XMiniAODv2]:
-    era.toModify(slimmedTausUpdated,
-                 tauIDSources=_tauIDSourcesWith2015
-                )
 
 
 

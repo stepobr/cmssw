@@ -8,7 +8,6 @@
  * ============================================================================
  */
 
-#include <boost/foreach.hpp>
 #include <boost/ptr_container/ptr_map.hpp>
 #include <memory>
 
@@ -21,18 +20,21 @@
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
+#include <FWCore/ParameterSet/interface/ConfigurationDescriptions.h>
+#include <FWCore/ParameterSet/interface/ParameterSetDescription.h>
+
 #include "TGraph.h"
 
 namespace {
 
 // Build the transformation function from the PSet format
-std::auto_ptr<TGraph> buildTransform(const edm::ParameterSet &pset) {
+std::unique_ptr<TGraph> buildTransform(const edm::ParameterSet &pset) {
   double min = pset.getParameter<double>("min");
   double max = pset.getParameter<double>("max");
   const std::vector<double> &values =
       pset.getParameter<std::vector<double> >("transform");
   double stepSize = (max - min)/(values.size()-1);
-  std::auto_ptr<TGraph> output(new TGraph(values.size()));
+  std::unique_ptr<TGraph> output(new TGraph(values.size()));
   for (size_t step = 0; step < values.size(); ++step) {
     double x = min + step*stepSize;
     output->SetPoint(step, x, values[step]);
@@ -50,6 +52,7 @@ class RecoTauMVATransform : public PFTauDiscriminationProducerBase {
     void beginEvent(const edm::Event&, const edm::EventSetup&) override;
     double discriminate(const reco::PFTauRef&) const override;
 
+    static void fillDescriptions(edm::ConfigurationDescriptions & descriptions);
   private:
     // Map a decay mode to a transformation
     typedef boost::ptr_map<reco::PFTau::hadronicDecayMode, TGraph> TransformMap;
@@ -66,7 +69,7 @@ RecoTauMVATransform::RecoTauMVATransform(const edm::ParameterSet& pset)
   typedef std::vector<edm::ParameterSet> VPSet;
   const VPSet& transforms = pset.getParameter<VPSet>("transforms");
   prediscriminantFailValue_ = -2.0;
-  BOOST_FOREACH(const edm::ParameterSet &transform, transforms) {
+  for(auto const& transform : transforms) {
     unsigned int nCharged = transform.getParameter<unsigned int>("nCharged");
     unsigned int nPiZeros = transform.getParameter<unsigned int>("nPiZeros");
     // Get the transform
@@ -78,7 +81,7 @@ RecoTauMVATransform::RecoTauMVATransform(const edm::ParameterSet& pset)
 
     if (!transforms_.count(decayMode)) {
       // Add it
-      transforms_.insert(decayMode, buildTransform(transformImpl));
+      transforms_.insert(decayMode, buildTransform(transformImpl).get());
     } else {
       edm::LogError("DecayModeNotUnique") << "The tau decay mode with "
         "nCharged/nPiZero = " << nCharged << "/" << nPiZeros <<
@@ -108,6 +111,32 @@ double RecoTauMVATransform::discriminate(const reco::PFTauRef& tau) const {
   double result = transform->Eval(value);
   return result;
 }
+
+void
+RecoTauMVATransform::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
+  // recoTauMVATransform
+  edm::ParameterSetDescription desc;
+
+  desc.add<edm::InputTag>("toTransform");
+
+  edm::ParameterSetDescription vpsd_transforms;
+  vpsd_transforms.add<uint32_t>("nCharged");
+  vpsd_transforms.add<uint32_t>("nPiZeros");
+
+  edm::ParameterSetDescription pset_transform;
+  pset_transform.add<double>("min");
+  pset_transform.add<double>("max");
+  pset_transform.add<std::vector<double>>("transform");
+  vpsd_transforms.add<edm::ParameterSetDescription>("transform", pset_transform);
+
+  //            name          description       no defaults items
+  desc.addVPSet("transforms", vpsd_transforms);
+
+  fillProducerDescriptions(desc); // inherited from the base
+
+  descriptions.add("recoTauMVATransform", desc);
+}
+
 
 #include "FWCore/Framework/interface/MakerMacros.h"
 DEFINE_FWK_MODULE(RecoTauMVATransform);

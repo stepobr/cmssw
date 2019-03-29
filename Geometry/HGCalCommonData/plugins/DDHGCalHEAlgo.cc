@@ -4,15 +4,17 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
+#include "DataFormats/Math/interface/GeantUnits.h"
 #include "DetectorDescription/Core/interface/DDutils.h"
 #include "DetectorDescription/Core/interface/DDSolid.h"
 #include "DetectorDescription/Core/interface/DDCurrentNamespace.h"
 #include "DetectorDescription/Core/interface/DDSplit.h"
 #include "Geometry/HGCalCommonData/plugins/DDHGCalHEAlgo.h"
 #include "Geometry/HGCalCommonData/interface/HGCalGeomTools.h"
-#include "CLHEP/Units/GlobalPhysicalConstants.h"
-#include "CLHEP/Units/GlobalSystemOfUnits.h"
+#include "Geometry/HGCalCommonData/interface/HGCalParameters.h"
 
+using namespace geant_units;
+using namespace geant_units::operators;
 //#define EDM_ML_DEBUG
 
 DDHGCalHEAlgo::DDHGCalHEAlgo() {
@@ -64,9 +66,14 @@ void DDHGCalHEAlgo::initialize(const DDNumericArguments & nArgs,
   layerType_    = dbl_to_int(vArgs["LayerType"]);
   layerSense_   = dbl_to_int(vArgs["LayerSense"]);
   firstLayer_   = (int)(nArgs["FirstLayer"]);
+  absorbMode_   = (int)(nArgs["AbsorberMode"]);
+#ifdef EDM_ML_DEBUG
+  edm::LogVerbatim("HGCalGeom") << "First Layere " << firstLayer_ << " and "
+				<< "Absober mode " << absorbMode_;
+#endif
   if (firstLayer_ > 0) {
     for (unsigned int i=0; i<layerType_.size(); ++i) {
-      if (layerSense_[i] != 0) {
+      if (layerSense_[i] > 0) {
 	int ii = layerType_[i];
 	copyNumber_[ii] = firstLayer_;
 #ifdef EDM_ML_DEBUG
@@ -141,6 +148,8 @@ void DDHGCalHEAlgo::initialize(const DDNumericArguments & nArgs,
   waferSize_    = nArgs["waferSize"];
   waferSepar_   = nArgs["SensorSeparation"];
   sectors_      = (int)(nArgs["Sectors"]);
+  alpha_        = piRadians/sectors_;
+  cosAlpha_     = cos(alpha_);
 #ifdef EDM_ML_DEBUG
   edm::LogVerbatim("HGCalGeom") << "DDHGCalHEAlgo: zStart " << zMinBlock_ 
 				<< " radius for wafer type separation uses "
@@ -149,7 +158,8 @@ void DDHGCalHEAlgo::initialize(const DDNumericArguments & nArgs,
 				<< ":" << nCutRadPar_ << ":" << fracAreaMin_
 				<< " wafer width " << waferSize_ 
 				<< " separations " << waferSepar_
-				<< " sectors " << sectors_;
+				<< " sectors " << sectors_ << ":"
+				<< convertRadToDeg(alpha_) << ":" << cosAlpha_;
   for (unsigned int k=0; k<rad100to200_.size(); ++k)
     edm::LogVerbatim("HGCalGeom") << "[" << k << "] 100-200 " <<rad100to200_[k]
 				  << " 200-300 " << rad200to300_[k];
@@ -220,12 +230,13 @@ void DDHGCalHEAlgo::constructLayers(const DDLogicalPart& module,
     int     laymax = laymin+layers_[i];
     double  zz     = zi;
     double  thickTot(0);
-    std::vector<double> pgonZ(2), pgonRin(2), pgonRout(2);
     for (int ly=laymin; ly<laymax; ++ly) {
       int     ii     = layerType_[ly];
       int     copy   = copyNumber_[ii];
       double  hthick = 0.5*thick_[ii];
       double  rinB   = HGCalGeomTools::radius(zo,zFrontB_,rMinFront_,slopeB_);
+      std::pair<double,double> zr = HGCalGeomTools::zradius(zz,zz+thick_[ii],
+							    zFrontT_,rMaxFront_);
       zz            += hthick;
       thickTot      += thick_[ii];
 
@@ -241,22 +252,39 @@ void DDHGCalHEAlgo::constructLayers(const DDLogicalPart& module,
 		     DDSplit(materials_[ii]).second);
       DDMaterial matter(matName);
       DDLogicalPart glog;
-      if (layerSense_[ly] == 0) {
-	double alpha = CLHEP::pi/sectors_;
-	double rmax  = routF*cos(alpha) - tol;
-	pgonZ[0]    =-hthick;  pgonZ[1]   = hthick;
-	pgonRin[0]  = rinB;    pgonRin[1] = rinB;   
-	pgonRout[0] = rmax;    pgonRout[1] = rmax;   
+      if (layerSense_[ly] < 1) {
+        int    nsec  = (layerSense_[ly] == 0 || absorbMode_ == 0 ||
+                        zr.first < 0) ? 2 : 3;
+	std::vector<double> pgonZ(nsec), pgonRin(nsec), pgonRout(nsec);
+        if (layerSense_[ly] == 0 || absorbMode_ == 0) {
+	  double rmax  = (std::min(routF,
+				  HGCalGeomTools::radius(zz+hthick,zFrontT_,rMaxFront_,slopeT_))*
+			  cosAlpha_) - tol;
+	  pgonZ[0]    =-hthick;  pgonZ[1]    = hthick;
+	  pgonRin[0]  = rinB;    pgonRin[1]  = rinB;   
+	  pgonRout[0] = rmax;    pgonRout[1] = rmax;   
+        } else {
+          for (int isec=0; isec<nsec; ++isec) {
+            double zs = ((isec == 0) ? (zz-hthick) : (isec == nsec-1) ?
+                         (zz+hthick) : zr.first);
+            double rm = (((isec == 0) || (isec == nsec-1)) ?
+			 HGCalGeomTools::radius(zs,zFrontT_,rMaxFront_,slopeT_)
+			 : zr.second)*cosAlpha_ - tol;
+            pgonZ[isec]    = zs-zz;
+            pgonRin[isec]  = rinB;
+            pgonRout[isec] = rm;
+          }
+        }
 	DDSolid solid = DDSolidFactory::polyhedra(DDName(name, nameSpace_),
-						  sectors_,-alpha,CLHEP::twopi,
+						  sectors_, -alpha_, 2._pi,
 						  pgonZ, pgonRin, pgonRout);
 	glog = DDLogicalPart(solid.ddname(), matter, solid);
 #ifdef EDM_ML_DEBUG
 	edm::LogVerbatim("HGCalGeom") << "DDHGCalHEAlgo: " << solid.name()
 				      << " polyhedra of " << sectors_ 
 				      << " sectors covering " 
-				      << -alpha/CLHEP::deg << ":" 
-				      << (-alpha+CLHEP::twopi)/CLHEP::deg
+				      << convertRadToDeg(-alpha_) << ":" 
+				      << convertRadToDeg(-alpha_+2._pi)
 				      << " with " << pgonZ.size()<<" sections";
 	for (unsigned int k=0; k<pgonZ.size(); ++k)
 	  edm::LogVerbatim("HGCalGeom") << "[" << k << "] z " << pgonZ[k] 
@@ -265,17 +293,15 @@ void DDHGCalHEAlgo::constructLayers(const DDLogicalPart& module,
 #endif
       } else {
 	DDSolid solid = DDSolidFactory::tubs(DDName(name, nameSpace_), 
-					     hthick, rinB, routF, 0.0,
-					     CLHEP::twopi);
+					     hthick, rinB, routF, 0.0, 2._pi);
 	glog = DDLogicalPart(solid.ddname(), matter, solid);
 #ifdef EDM_ML_DEBUG
 	edm::LogVerbatim("HGCalGeom") << "DDHGCalHEAlgo: " << solid.name()
 				      << " Tubs made of " << matName 
 				      << " of dimensions " << rinB 
 				      << ", " << routF << ", " << hthick
-				      << ", 0.0, " << CLHEP::twopi/CLHEP::deg;
-	edm::LogVerbatim("HGCalGeom") << "Position in: " << glog.name() 
-				      << " number "	<< copy;
+				      << ", 0.0, 360.0 and positioned in: "
+				      << glog.name() << " number " << copy;
 #endif
 	positionMix(glog, name, copy, thick_[ii], matter, rinB, rMixLayer_[i],
 		    routF, zz, cpv);
@@ -329,15 +355,13 @@ void DDHGCalHEAlgo::positionMix(const DDLogicalPart& glog,
   // Make the top part first
   std::string name = nameM+"Top";
   DDSolid solid = DDSolidFactory::tubs(DDName(name, nameSpace_), 
-				       hthick, rmid, rout, 0.0,
-				       CLHEP::twopi);
+				       hthick, rmid, rout, 0.0, 2._pi);
   glog1 = DDLogicalPart(solid.ddname(), matter, solid);
 #ifdef EDM_ML_DEBUG
   edm::LogVerbatim("HGCalGeom") << "DDHGCalHEAlgo: " << solid.name() 
 				<< " Tubs made of " << matter.name() 
 				<< " of dimensions " << rmid << ", " << rout 
-				<< ", " << hthick << ", 0.0, " 
-				<< CLHEP::twopi/CLHEP::deg;
+				<< ", " << hthick << ", 0.0, 360.0";
 #endif
   cpv.position(glog1, glog, 1, tran, rot);
 #ifdef EDM_ML_DEBUG
@@ -361,7 +385,7 @@ void DDHGCalHEAlgo::positionMix(const DDLogicalPart& glog,
 		   DDSplit(materialsTop_[ii]).second);
     DDMaterial matter1(matName);
     solid = DDSolidFactory::tubs(DDName(name,nameSpace_), hthickl, rmid, rout,
-				 0.0, CLHEP::twopi);
+				 0.0, 2._pi);
     DDLogicalPart glog2 = DDLogicalPart(solid.ddname(), matter1, solid);
 #ifdef EDM_ML_DEBUG
     double eta1 = -log(tan(0.5*atan(rmid/zz)));
@@ -372,8 +396,7 @@ void DDHGCalHEAlgo::positionMix(const DDLogicalPart& glog,
     edm::LogVerbatim("HGCalGeom") << "DDHGCalHEAlgo: " << solid.name() 
 				  << " Tubs made of " << matName 
 				  << " of dimensions " << rmid << ", " << rout
-				  << ", " << hthickl <<", 0.0, "
-				  << CLHEP::twopi/CLHEP::deg;
+				  << ", " << hthickl <<", 0.0, 360.0";
 #endif
     zpos += hthickl;
     DDTranslation r1(0,0,zpos);
@@ -402,14 +425,13 @@ void DDHGCalHEAlgo::positionMix(const DDLogicalPart& glog,
   // Make the bottom part next
   name  = nameM+"Bottom";
   solid = DDSolidFactory::tubs(DDName(name, nameSpace_), 
-			       hthick, rin, rmid, 0.0, CLHEP::twopi);
+			       hthick, rin, rmid, 0.0, 2._pi);
   glog1 = DDLogicalPart(solid.ddname(), matter, solid);
 #ifdef EDM_ML_DEBUG
   edm::LogVerbatim("HGCalGeom") << "DDHGCalHEAlgo: " << solid.name() 
 				<< " Tubs made of " << matter.name() 
 				<< " of dimensions " << rin << ", " << rmid 
-				<< ", " << hthick << ", 0.0, " 
-				<< CLHEP::twopi/CLHEP::deg;
+				<< ", " << hthick << ", 0.0, 360.0";
 #endif
   cpv.position(glog1, glog, 1, tran, rot);
 #ifdef EDM_ML_DEBUG
@@ -434,7 +456,7 @@ void DDHGCalHEAlgo::positionMix(const DDLogicalPart& glog,
 		   DDSplit(materialsBot_[ii]).second);
     DDMaterial matter1(matName);
     solid = DDSolidFactory::tubs(DDName(name,nameSpace_), hthickl, rin, rmid,
-				 0.0, CLHEP::twopi);
+				 0.0, 2._pi);
     DDLogicalPart glog2 = DDLogicalPart(solid.ddname(), matter1, solid);
 #ifdef EDM_ML_DEBUG
     double eta1 = -log(tan(0.5*atan(rin/zz)));
@@ -445,8 +467,7 @@ void DDHGCalHEAlgo::positionMix(const DDLogicalPart& glog,
     edm::LogVerbatim("HGCalGeom") << "DDHGCalHEAlgo: " << solid.name() 
 				  << " Tubs made of " << matName 
 				  << " of dimensions " << rin << ", " << rmid 
-				  << ", " << hthickl <<", 0.0, "
-				  << CLHEP::twopi/CLHEP::deg;
+				  << ", " << hthickl <<", 0.0, 360.0";
 #endif
     zpos += hthickl;
     DDTranslation r1(0,0,zpos);
@@ -483,7 +504,6 @@ void DDHGCalHEAlgo::positionSensitive(const DDLogicalPart& glog, double rin,
   double R    = 2.0*r/sqrt3;
   double dy   = 0.75*R;
   int    N    = (int)(0.5*rout/r) + 2;
-  double xc[6], yc[6];
 #ifdef EDM_ML_DEBUG
   int    ium(0), ivm(0), iumAll(0), ivmAll(0), kount(0), ntot(0), nin(0);
   std::vector<int>  ntype(6,0);
@@ -499,22 +519,12 @@ void DDHGCalHEAlgo::positionSensitive(const DDLogicalPart& glog, double rin,
       int nc =-2*u+v;
       double xpos = nc*r;
       double ypos = nr*dy;
-      xc[0] = xpos+r;  yc[0] = ypos+0.5*R;
-      xc[1] = xpos;    yc[1] = ypos+R;
-      xc[2] = xpos-r;  yc[2] = ypos+0.5*R;
-      xc[3] = xpos-r;  yc[3] = ypos-0.5*R;
-      xc[4] = xpos;    yc[4] = ypos-R;
-      xc[5] = xpos+r;  yc[5] = ypos-0.5*R;
-      bool cornerOne(false), cornerAll(true);
-      for (int k=0; k<6; ++k) {
-	double rpos = std::sqrt(xc[k]*xc[k]+yc[k]*yc[k]);
-	if (rpos >= rin && rpos <= rout) cornerOne = true;
-	else                             cornerAll = false;
-      }
+      std::pair<int,int> corner = 
+	HGCalGeomTools::waferCorner(xpos, ypos, r, R, rin, rout, false);
 #ifdef EDM_ML_DEBUG
       ++ntot;
 #endif
-      if (cornerOne) {
+      if (corner.first > 0) {
 	int type = waferType_->getType(xpos,ypos,zpos);
 	int copy = type*1000000 + iv*100 + iu;
 	if (u < 0) copy += 10000;
@@ -525,7 +535,7 @@ void DDHGCalHEAlgo::positionSensitive(const DDLogicalPart& glog, double rin,
 	kount++;
 	if (copies_.count(copy) == 0) copies_.insert(copy);
 #endif
-	if (cornerAll) {
+	if (corner.first == (int)(HGCalParameters::k_CornerSize)) {
 #ifdef EDM_ML_DEBUG
 	  if (iu > iumAll) iumAll = iu;
 	  if (iv > ivmAll) ivmAll = iv;

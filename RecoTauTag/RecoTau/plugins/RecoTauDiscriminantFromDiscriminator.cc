@@ -8,13 +8,12 @@
  *
  */
 
-#include <boost/foreach.hpp>
 #include <sstream>
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "RecoTauTag/RecoTau/interface/RecoTauDiscriminantPlugins.h"
 #include "DataFormats/TauReco/interface/PFTauDiscriminator.h"
 
-namespace reco { namespace tau {
+namespace reco::tau {
 
 class RecoTauDiscriminantFromDiscriminator : public RecoTauDiscriminantPlugin{
   public:
@@ -32,32 +31,21 @@ class RecoTauDiscriminantFromDiscriminator : public RecoTauDiscriminantPlugin{
 
 RecoTauDiscriminantFromDiscriminator::RecoTauDiscriminantFromDiscriminator(
     const edm::ParameterSet& pset):RecoTauDiscriminantPlugin(pset) {
-  takeAbs_ = pset.existsAs<bool>("takeAbs") ? 
-    pset.getParameter<bool>("takeAbs") : false;
-  min_ = pset.existsAs<double>("minValue") ? 
-    pset.getParameter<double>("minValue") : -1*std::numeric_limits<double>::max();
-  max_ = pset.existsAs<double>("maxValue") ? 
-    pset.getParameter<double>("maxValue") : std::numeric_limits<double>::max();
 
-  if (pset.existsAs<edm::InputTag>("discSrc")) {
-    discriminators_.push_back(std::make_pair(
-          pset.getParameter<edm::InputTag>("discSrc"),
-          edm::Handle<reco::PFTauDiscriminator>()));
-  } else {
-    // Get multiple discriminators.  This supports the case when the MVAHelper
-    // class might be dealing with multiple tau collections (training)
-    std::vector<edm::InputTag> discriminators =
-      pset.getParameter<std::vector<edm::InputTag> >("discSrc");
-    BOOST_FOREACH(const edm::InputTag& tag, discriminators) {
-      discriminators_.push_back(std::make_pair(
-            tag, edm::Handle<reco::PFTauDiscriminator>()));
-    }
+  takeAbs_ = pset.getParameter<bool>("takeAbs");
+  min_ = pset.getParameter<double>("minValue");
+  max_ = pset.getParameter<double>("maxValue");
+
+  std::vector<edm::InputTag> discriminators =
+    pset.getParameter<std::vector<edm::InputTag> >("discSrc");
+  for(auto const& tag : discriminators) {
+    discriminators_.push_back(std::make_pair(tag, edm::Handle<reco::PFTauDiscriminator>()));
   }
 }
 
 // Called by base class at the beginning of every event
 void RecoTauDiscriminantFromDiscriminator::beginEvent() {
-  BOOST_FOREACH(DiscInfo& discInfo, discriminators_) {
+  for(auto& discInfo : discriminators_) {
     evt()->getByLabel(discInfo.first, discInfo.second);
   }
 }
@@ -100,7 +88,7 @@ std::vector<double> RecoTauDiscriminantFromDiscriminator::operator()(
   return std::vector<double>(1, result);
 }
 
-}} // end namespace reco::tau
+} // end namespace reco::tau
 
 #include "FWCore/Framework/interface/MakerMacros.h"
 DEFINE_EDM_PLUGIN(RecoTauDiscriminantPluginFactory,

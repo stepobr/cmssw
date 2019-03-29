@@ -10,7 +10,6 @@
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/EventSetup.h"
 
-#include "FastSimulation/Particle/interface/RawParticle.h"
 #include "FastSimulation/Utilities/interface/FamosDebug.h"
 
 #include "DetectorDescription/Core/interface/DDsvalues.h"
@@ -60,7 +59,7 @@ private:
   const edm::ParameterSet fast;
   std::unique_ptr<HFShowerLibrary> hfshower;
   std::unique_ptr<HcalNumberingFromDDD> numberingFromDDD;
-  HcalDDDSimConstants* hcalConstants;
+  const HcalDDDSimConstants* hcalConstants;
   HcalNumberingScheme numberingScheme;
   
   std::map<CaloHitID,float> hitMap;

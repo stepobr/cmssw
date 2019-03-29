@@ -19,8 +19,9 @@
 #include "RecoEgamma/EgammaElectronAlgos/interface/ElectronUtilities.h"
 #include "TrackingTools/TrajectoryParametrization/interface/GlobalTrajectoryParameters.h"
 #include "TrackingTools/DetLayers/interface/rangesIntersect.h"
-#include "TrackingTools/DetLayers/interface/PhiLess.h"
+#include "DataFormats/GeometryVector/interface/VectorUtil.h"
 #include "TrackingTools/TransientTrackingRecHit/interface/TransientTrackingRecHit.h"
+#include "DataFormats/Math/interface/normalizedPhi.h"
 
 // zero value indicates incompatible ts - hit pair
 std::pair<bool,double> ForwardMeasurementEstimator::estimate( const TrajectoryStateOnSurface& ts,
@@ -50,9 +51,7 @@ std::pair<bool,double> ForwardMeasurementEstimator::estimate( const TrajectorySt
   float myPhimin = thePhiMin;
   float myPhimax = thePhiMax;
 
-  float phiDiff = tsPhi - rhPhi;
-  if (phiDiff > pi) phiDiff -= twopi;
-  if (phiDiff < -pi) phiDiff += twopi;
+  float phiDiff = normalizedPhi(tsPhi - rhPhi);
 
   if ( (phiDiff < myPhimax) & (phiDiff > myPhimin) ) {
     return std::pair<bool,double>(true,1.);
@@ -88,7 +87,7 @@ std::pair<bool,double> ForwardMeasurementEstimator::estimate
   float myPhimin = thePhiMin;
   float myPhimax = thePhiMax;  
 
-  float phiDiff = normalized_phi(rhPhi - tsPhi) ;  
+  float phiDiff = normalizedPhi(rhPhi - tsPhi) ;  
 
   if ( phiDiff < myPhimax && phiDiff > myPhimin )
    { return std::pair<bool,double>(true,1.) ; }
@@ -111,7 +110,7 @@ bool ForwardMeasurementEstimator::estimate
   Range trajPhiRange(trajPos.phi() - std::abs(thePhiMin), trajPos.phi() + std::abs(thePhiMax));
 
   if(rangesIntersect(trajRRange, plane.rSpan()) &&
-     rangesIntersect(trajPhiRange, plane.phiSpan(), PhiLess()))
+     rangesIntersect(trajPhiRange, plane.phiSpan(), [](auto x,auto y){ return Geom::phiLess(x, y);}))
    { return true ; }
   else
    { return false ; }

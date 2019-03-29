@@ -1,7 +1,8 @@
-#include <boost/foreach.hpp>
-
 #include "RecoTauTag/RecoTau/interface/TauDiscriminationProducerBase.h"
 #include "FWCore/Utilities/interface/InputTag.h"
+
+#include <FWCore/ParameterSet/interface/ConfigurationDescriptions.h>
+#include <FWCore/ParameterSet/interface/ParameterSetDescription.h>
 
 #include "CommonTools/Utils/interface/StringObjectFunction.h"
 #include "DataFormats/Math/interface/deltaR.h"
@@ -24,6 +25,8 @@ class PFRecoTauDiscriminationByHPSSelection : public PFTauDiscriminationProducer
   explicit PFRecoTauDiscriminationByHPSSelection(const edm::ParameterSet&);
   ~PFRecoTauDiscriminationByHPSSelection() override;
   double discriminate(const reco::PFTauRef&) const override;
+
+  static void fillDescriptions(edm::ConfigurationDescriptions & descriptions);
 
  private:
   typedef StringObjectFunction<reco::PFTau> TauFunc;
@@ -70,37 +73,20 @@ PFRecoTauDiscriminationByHPSSelection::PFRecoTauDiscriminationByHPSSelection(con
   // Get the mass cuts for each decay mode
   typedef std::vector<edm::ParameterSet> VPSet;
   const VPSet& decayModes = pset.getParameter<VPSet>("decayModes");
-  BOOST_FOREACH( const edm::ParameterSet &decayMode, decayModes ) {
+  for(auto const& decayMode : decayModes ) {
     // The mass window(s)
     DecayModeCuts cuts;
-    if ( decayMode.exists("nTracksMin") ) {
-      cuts.nTracksMin_ = decayMode.getParameter<unsigned>("nTracksMin");
-    } else {
-      cuts.nTracksMin_ = 0;
-    }
-    if ( decayMode.exists("nChargedPFCandsMin") ) {
-      cuts.nChargedPFCandsMin_ = decayMode.getParameter<unsigned>("nChargedPFCandsMin");
-    } else {
-      cuts.nChargedPFCandsMin_ = 0;
-    }
+    cuts.nTracksMin_ = decayMode.getParameter<unsigned>("nTracksMin");
+    cuts.nChargedPFCandsMin_ = decayMode.getParameter<unsigned>("nChargedPFCandsMin");
     cuts.minMass_ = decayMode.getParameter<double>("minMass");
     cuts.maxMass_ = new TauFunc(decayMode.getParameter<std::string>("maxMass"));
     edm::ParameterSet applyBendCorrection = decayMode.getParameter<edm::ParameterSet>("applyBendCorrection");
     cuts.applyBendCorrection_eta_ = applyBendCorrection.getParameter<bool>("eta");
     cuts.applyBendCorrection_phi_ = applyBendCorrection.getParameter<bool>("phi");
     cuts.applyBendCorrection_mass_ = applyBendCorrection.getParameter<bool>("mass");
-    if ( decayMode.exists("minPi0Mass") ) {
-      cuts.minPi0Mass_ = decayMode.getParameter<double>("minPi0Mass");
-      cuts.maxPi0Mass_ = decayMode.getParameter<double>("maxPi0Mass");
-    } else {
-      cuts.minPi0Mass_ = -1.e3;
-      cuts.maxPi0Mass_ = 1.e9;
-    }
-    if ( decayMode.exists("assumeStripMass") ) {
-      cuts.assumeStripMass_ = decayMode.getParameter<double>("assumeStripMass");
-    } else {
-      cuts.assumeStripMass_ = -1.0;
-    }
+    cuts.minPi0Mass_ = decayMode.getParameter<double>("minPi0Mass");
+    cuts.maxPi0Mass_ = decayMode.getParameter<double>("maxPi0Mass");
+    cuts.assumeStripMass_ = decayMode.getParameter<double>("assumeStripMass");
     decayModeCuts_.insert(std::make_pair(
             // The decay mode as a key
             std::make_pair(
@@ -111,8 +97,7 @@ PFRecoTauDiscriminationByHPSSelection::PFRecoTauDiscriminationByHPSSelection(con
   }
   requireTauChargedHadronsToBeChargedPFCands_ = pset.getParameter<bool>("requireTauChargedHadronsToBeChargedPFCands");
   minPixelHits_ = pset.getParameter<int>("minPixelHits");
-  verbosity_ = pset.exists("verbosity") ?
-    pset.getParameter<int>("verbosity") : 0;
+  verbosity_ = pset.getParameter<int>("verbosity");
   
 
 }
@@ -200,16 +185,14 @@ PFRecoTauDiscriminationByHPSSelection::discriminate(const reco::PFTauRef& tau) c
   }
   // Find the total pizero p4
   reco::Candidate::LorentzVector stripsP4;
-  BOOST_FOREACH(const reco::RecoTauPiZero& cand, 
-      tau->signalPiZeroCandidates()){
+  for(auto const& cand : tau->signalPiZeroCandidates()){
     const math::XYZTLorentzVector& candP4 = cand.p4();
     stripsP4 += candP4;
   }
 
   // Apply strip mass assumption corrections
   if (massWindow.assumeStripMass_ >= 0) {
-    BOOST_FOREACH(const reco::RecoTauPiZero& cand, 
-        tau->signalPiZeroCandidates()){
+    for(auto const& cand : tau->signalPiZeroCandidates()){
       const math::XYZTLorentzVector& uncorrected = cand.p4();
       math::XYZTLorentzVector corrected = 
         applyMassConstraint(uncorrected, massWindow.assumeStripMass_);
@@ -297,7 +280,7 @@ PFRecoTauDiscriminationByHPSSelection::discriminate(const reco::PFTauRef& tau) c
   }
 
   if ( requireTauChargedHadronsToBeChargedPFCands_ ) {
-    BOOST_FOREACH(const reco::PFRecoTauChargedHadron& cand, tau->signalTauChargedHadronCandidates()) {
+    for(auto const& cand : tau->signalTauChargedHadronCandidates()) {
       if ( verbosity_ ) {
 	std::string algo_string;
 	if      ( cand.algo() == reco::PFRecoTauChargedHadron::kChargedPFCandidate ) algo_string = "ChargedPFCandidate";
@@ -340,6 +323,56 @@ PFRecoTauDiscriminationByHPSSelection::discriminate(const reco::PFTauRef& tau) c
     edm::LogPrint("PFTauByHPSSelect") << " passes all cuts." ;
   }
   return 1.0;
+}
+
+void
+PFRecoTauDiscriminationByHPSSelection::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
+  // hpsSelectionDiscriminator
+  edm::ParameterSetDescription desc;
+  desc.add<edm::InputTag>("PFTauProducer", edm::InputTag("combinatoricRecoTaus"));
+  desc.add<int>("verbosity", 0);
+  desc.add<double>("minTauPt", 0.0);
+  {
+    edm::ParameterSetDescription psd0;
+    psd0.add<std::string>("BooleanOperator", "and");
+    desc.add<edm::ParameterSetDescription>("Prediscriminants", psd0);
+  }
+
+  {
+    edm::ParameterSetDescription vpset_decayModes;
+    vpset_decayModes.add<double>("minPi0Mass", -1.e3);
+    vpset_decayModes.add<std::string>("maxMass");
+    vpset_decayModes.add<double>("maxPi0Mass", 1.e9);
+    vpset_decayModes.add<unsigned int>("nPiZeros");
+    vpset_decayModes.add<double>("minMass");
+    vpset_decayModes.add<unsigned int>("nChargedPFCandsMin", 0);
+    vpset_decayModes.add<unsigned int>("nTracksMin", 0);
+    vpset_decayModes.add<unsigned int>("nCharged");
+    {
+      edm::ParameterSetDescription psd0;
+      psd0.add<bool>("phi");
+      psd0.add<bool>("eta");
+      psd0.add<bool>("mass");
+      vpset_decayModes.add<edm::ParameterSetDescription>("applyBendCorrection", psd0);
+    }
+    vpset_decayModes.add<double>("assumeStripMass", -1.0);
+    std::vector<edm::ParameterSet> vpset_default;
+    {
+      edm::ParameterSet pset;
+      pset.addParameter<double>("minPi0Mass", -1.e3);
+      pset.addParameter<double>("maxPi0Mass", 1.e9);
+      pset.addParameter<unsigned int>("nChargedPFCandsMin", 0);
+      pset.addParameter<unsigned int>("nTracksMin", 0);
+      pset.addParameter<double>("assumeStripMass", -1.0);
+      vpset_default.push_back(pset);
+    }
+    desc.addVPSet("decayModes", vpset_decayModes, vpset_default);
+  }
+
+  desc.add<double>("matchingCone", 0.5);
+  desc.add<int>("minPixelHits", 1);
+  desc.add<bool>("requireTauChargedHadronsToBeChargedPFCands", false);
+  descriptions.add("hpsSelectionDiscriminator", desc);
 }
 
 DEFINE_FWK_MODULE(PFRecoTauDiscriminationByHPSSelection);

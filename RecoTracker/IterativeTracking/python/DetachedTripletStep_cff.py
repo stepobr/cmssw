@@ -6,6 +6,8 @@ import RecoTracker.IterativeTracking.iterativeTkConfig as _cfg
 from Configuration.Eras.Modifier_fastSim_cff import fastSim
 from FastSimulation.Tracking.SeedingMigration import _hitSetProducerToFactoryPSet
 
+#for dnn classifier
+from Configuration.ProcessModifiers.trackdnn_cff import trackdnn
 
 ###############################################
 # Low pT and detached tracks from pixel triplets
@@ -68,7 +70,7 @@ from RecoTracker.TkHitPairs.hitPairEDProducer_cfi import hitPairEDProducer as _h
 detachedTripletStepHitDoublets = _hitPairEDProducer.clone(
     seedingLayers = "detachedTripletStepSeedLayers",
     trackingRegions = "detachedTripletStepTrackingRegions",
-    maxElement = 0,
+    maxElement = 50000000,
     produceIntermediateHitDoublets = True,
 )
 from RecoPixelVertexing.PixelTriplets.pixelTripletLargeTipEDProducer_cfi import pixelTripletLargeTipEDProducer as _pixelTripletLargeTipEDProducer
@@ -112,8 +114,7 @@ _fastSim_detachedTripletStepSeeds = FastSimulation.Tracking.TrajectorySeedProduc
     hitMasks = cms.InputTag("detachedTripletStepMasks"),
     seedFinderSelector = dict( pixelTripletGeneratorFactory = _hitSetProducerToFactoryPSet(detachedTripletStepHitTriplets),
                                layerList = detachedTripletStepSeedLayers.layerList.value())
-)
-#new for phase1
+)#new for phase1
 trackingPhase1.toModify(_fastSim_detachedTripletStepSeeds, seedFinderSelector = dict(
         pixelTripletGeneratorFactory = None,
         CAHitTripletGeneratorFactory = _hitSetProducerToFactoryPSet(detachedTripletStepHitTriplets),
@@ -255,9 +256,22 @@ detachedTripletStep.inputClassifiers=['detachedTripletStepClassifier1','detached
 
 trackingPhase1.toReplaceWith(detachedTripletStep, detachedTripletStepClassifier1.clone(
      mva = dict(GBRForestLabel = 'MVASelectorDetachedTripletStep_Phase1'),
-     qualityCuts = [-0.2,0.3,0.8],
+     qualityCuts = [-0.2,0.3,0.8]
 ))
+
+from RecoTracker.FinalTrackSelectors.TrackLwtnnClassifier_cfi import *
+from RecoTracker.FinalTrackSelectors.trackSelectionLwtnn_cfi import *
+trackdnn.toReplaceWith(detachedTripletStep, TrackLwtnnClassifier.clone(
+     src = 'detachedTripletStepTracks',
+     qualityCuts = [0.0, 0.4, 0.8],
+))
+(trackdnn & fastSim).toModify(detachedTripletStep,vertices = "firstStepPrimaryVerticesBeforeMixing")
+
 highBetaStar_2018.toModify(detachedTripletStep,qualityCuts = [-0.5,0.0,0.5])
+pp_on_AA_2018.toModify(detachedTripletStep, 
+        mva = dict(GBRForestLabel = 'HIMVASelectorDetachedTripletStep_Phase1'),
+        qualityCuts = [-0.2, 0.4, 0.85],
+)
 
 # For LowPU
 import RecoTracker.FinalTrackSelectors.multiTrackSelector_cfi

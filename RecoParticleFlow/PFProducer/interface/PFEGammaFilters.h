@@ -23,6 +23,7 @@ class PFEGammaFilters {
 		  float ph_sietaieta_eb,
 		  float ph_sietaieta_ee,
 		  const edm::ParameterSet& ph_protectionsForJetMET,
+		  const edm::ParameterSet& ph_protectionsForBadHcal,
 		  float ele_iso_pt,
 		  float ele_iso_mva_eb,
 		  float ele_iso_mva_ee,
@@ -30,8 +31,11 @@ class PFEGammaFilters {
 		  float ele_iso_combIso_ee,
 		  float ele_noniso_mva,
 		  unsigned int ele_missinghits,
+		  float ele_ecalDrivenHademPreselCut,
+		  float ele_maxElePtForOnlyMVAPresel,
 		  const std::string& ele_iso_path_mvaWeightFile,
-		  const edm::ParameterSet& ele_protectionsForJetMET
+		  const edm::ParameterSet& ele_protectionsForJetMET,
+		  const edm::ParameterSet& ele_protectionsForBadHcal
 		  );
   
   ~PFEGammaFilters(){};
@@ -50,10 +54,11 @@ class PFEGammaFilters {
   bool isPhotonSafeForJetMET(const reco::Photon &, 
 			     const reco::PFCandidate &);
 
+  void setDebug( bool debug ) { debug_ = debug; }
   
 
  private:
-
+  bool passGsfElePreSelWithOnlyConeHadem(const reco::GsfElectron &);
 
 
   // Photon selections
@@ -73,15 +78,28 @@ class PFEGammaFilters {
   float ele_iso_combIso_ee_;
   float ele_noniso_mva_;
   unsigned int ele_missinghits_;
+  float ele_ecalDrivenHademPreselCut_;
+  float ele_maxElePtForOnlyMVAPresel_;
   //std::vector<double> ele_protectionsForJetMET_; // replacement below
   float ele_maxNtracks, ele_maxHcalE, ele_maxTrackPOverEele, ele_maxE,
     ele_maxEleHcalEOverEcalE, ele_maxEcalEOverPRes, ele_maxEeleOverPoutRes,
     ele_maxHcalEOverP, ele_maxHcalEOverEcalE, ele_maxEcalEOverP_1,
     ele_maxEcalEOverP_2, ele_maxEeleOverPout, ele_maxDPhiIN;
-  
-  
+
+  // dead hcal selections (electrons)
+  std::array<float,2> badHcal_full5x5_sigmaIetaIeta_;
+  std::array<float,2> badHcal_eInvPInv_;
+  std::array<float,2> badHcal_dEta_;
+  std::array<float,2> badHcal_dPhi_;
+  bool badHcal_eleEnable_;
+  static void readEBEEParams_(const edm::ParameterSet &pset, const std::string &name, std::array<float,2> & out) ;
+
+  // dead hcal selections (photons)
+  float badHcal_phoTrkSolidConeIso_offs_, badHcal_phoTrkSolidConeIso_slope_;
+  bool badHcal_phoEnable_;
+
   // Event variables 
   
-
+  bool debug_;
 };
 #endif

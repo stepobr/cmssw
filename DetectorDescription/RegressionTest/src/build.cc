@@ -13,7 +13,7 @@
 #include "DetectorDescription/Core/interface/DDRoot.h"
 #include "DetectorDescription/Core/interface/DDSolid.h"
 #include "DetectorDescription/Core/interface/DDTransform.h"
-#include "DetectorDescription/Core/interface/DDUnits.h"
+#include "DataFormats/Math/interface/GeantUnits.h"
 #include "DetectorDescription/Parser/interface/DDLParser.h"
 #include "DetectorDescription/Parser/interface/FIPConfiguration.h"
 #include "FWCore/Utilities/interface/Exception.h"
@@ -24,7 +24,7 @@
 #include "Math/GenVector/RotationZ.h"
 
 using namespace std;
-using namespace dd::operators;
+using namespace geant_units::operators;
 
 /*
 File setup.xml:
@@ -81,19 +81,19 @@ void regressionTest_setup(ClhepEvaluator& eval) {
    cout << air << endl;   
 
    // Some rotations in the x-y plane (Unit, 30,60,90 degs)
-   DDRotationMatrix * r0  = new DDRotationMatrix();
-   DDRotationMatrix * r30 = new DDRotationMatrix(ROOT::Math::RotationZ(30._deg));   
-   DDRotationMatrix * r60 = new DDRotationMatrix(ROOT::Math::RotationZ(60._deg));   
-   DDRotationMatrix * r90 = new DDRotationMatrix(ROOT::Math::RotationZ(90._deg));   
+   std::unique_ptr<DDRotationMatrix> r0  = std::make_unique<DDRotationMatrix>();
+   std::unique_ptr<DDRotationMatrix> r30 = std::make_unique<DDRotationMatrix>(ROOT::Math::RotationZ( 30._deg ));
+   std::unique_ptr<DDRotationMatrix> r60 = std::make_unique<DDRotationMatrix>(ROOT::Math::RotationZ( 60._deg ));
+   std::unique_ptr<DDRotationMatrix> r90 = std::make_unique<DDRotationMatrix>(ROOT::Math::RotationZ( 90._deg ));
    
-   DDrot(DDName("Unit",ns),r0);
-   DDrot(DDName("R30",ns),r30);
-   DDrot(DDName("R60",ns),r60);
-   DDrot(DDName("R90",ns),r90);
+   DDrot( DDName( "Unit", ns ), std::move( r0 ));
+   DDrot( DDName( "R30", ns ), std::move( r30 ));
+   DDrot( DDName( "R60", ns ), std::move( r60 ));
+   DDrot( DDName( "R90", ns ), std::move( r90 ));
    
-   DDSolid collectorSolid = DDSolidFactory::shapeless(DDName("group",ns));
+   DDSolid collectorSolid = DDSolidFactory::shapeless( DDName( "group", ns ));
    
-   DDRootDef::instance().set(worldName);	      
+   DDRootDef::instance().set( worldName );
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -171,10 +171,10 @@ void regressionTest_first(ClhepEvaluator& eval ) {
   cpv.position(supportLP, part, std::string("3"), t4, r60);
   cpv.position(supportLP, part, std::string("4"), t5, r90);
    
-  DDRotationMatrix * rm = new DDRotationMatrix(ROOT::Math::AxisAngle(DD3Vector(1.,1.,1.),20._deg));
-  DDRotation rw= DDrot(DDName("group", ns), rm);
-  DDLogicalPart ws(DDName("world","setup"));
-  cpv.position(part, ws, std::string("1"), t0, rw);
+  std::unique_ptr<DDRotationMatrix> rm = std::make_unique<DDRotationMatrix>( ROOT::Math::AxisAngle( DD3Vector( 1., 1., 1. ), 20._deg ));
+  DDRotation rw = DDrot( DDName( "group", ns ), std::move( rm ));
+  DDLogicalPart ws( DDName( "world", "setup" ));
+  cpv.position( part, ws, std::string( "1" ), t0, rw );
 }
 
 
@@ -208,7 +208,7 @@ void output(string filename)
        << "  " << exv.logicalPart().material() << endl
        << "  " << exv.logicalPart().solid() << endl
        << "  " << exv.translation() << endl;
-    os << "  " << ra.Axis() << CONVERT_TO( ra.Angle(), deg ) << endl;
+    os << "  " << ra.Axis() << convertRadToDeg( ra.Angle() ) << endl;
     tvec.emplace_back(exv.translation());   
     loop = exv.next();
   }
@@ -258,17 +258,17 @@ void printRot(const DDRotationMatrix & rot) {
 	    << y << "\n"
 	    << z << std::endl;
   cout << "phiX=" << x.phi() << " or in degrees = " 
-       << CONVERT_TO( x.phi(), deg ) << endl;
+       << convertRadToDeg( x.phi() ) << endl;
   cout << "thetaX=" << x.theta() << " or in degrees = " 
-       << CONVERT_TO( x.theta(), deg ) << endl;
+       << convertRadToDeg( x.theta() ) << endl;
   cout << "phiY=" << y.phi() << " or in degrees = " 
-       << CONVERT_TO( y.phi(), deg ) << endl;
+       << convertRadToDeg( y.phi() ) << endl;
   cout << "thetaY=" << y.theta() << " or in degrees = " 
-       << CONVERT_TO( y.theta(), deg ) << endl;
+       << convertRadToDeg( y.theta() ) << endl;
   cout << "phiZ=" << z.phi() << " or in degrees = " 
-       << CONVERT_TO( z.phi(), deg ) << endl;
+       << convertRadToDeg( z.phi() ) << endl;
   cout << "thetaZ=" << z.theta() << " or in degrees = " 
-       << CONVERT_TO( z.theta(), deg ) << endl;
+       << convertRadToDeg( z.theta() ) << endl;
   
   cout << "some factor/equations..." << endl;
   cout << " sin(thetaX()) * cos(phiX()) = " 

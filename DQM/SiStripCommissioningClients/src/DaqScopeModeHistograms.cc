@@ -22,7 +22,7 @@ DaqScopeModeHistograms::DaqScopeModeHistograms( const edm::ParameterSet& pset,
                              sistrip::DAQ_SCOPE_MODE )
 {
 
-  factory_ = auto_ptr<DaqScopeModeSummaryFactory>( new DaqScopeModeSummaryFactory );
+  factory_ = unique_ptr<DaqScopeModeSummaryFactory>( new DaqScopeModeSummaryFactory );
   LogTrace(mlDqmClient_)
     << "[DaqScopeModeHistograms::" << __func__ << "]"
     << " Constructing object...";
@@ -73,8 +73,11 @@ void DaqScopeModeHistograms::histoAnalysis( bool debug ) {
     Histos::const_iterator ihis = iter->second.begin();
     for ( ; ihis != iter->second.end(); ihis++ ) {
       TProfile* prof = ExtractTObject<TProfile>().extract( (*ihis)->me_ );
-      if ( prof ) 
-	profs.push_back(prof);
+      if ( prof ){profs.push_back(prof);}
+      if (!prof ){
+        TH1F* prof = ExtractTObject<TH1F>().extract((*ihis)->me_);
+        profs.push_back(prof);
+      }
     }
 
     // Perform histo analysis                                                                                                                                                                          

@@ -19,6 +19,9 @@
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/Utilities/interface/Exception.h"
 
+#include <FWCore/ParameterSet/interface/ConfigurationDescriptions.h>
+#include <FWCore/ParameterSet/interface/ParameterSetDescription.h>
+
 #include "TrackingTools/TransientTrack/interface/TransientTrackBuilder.h"
 #include "TrackingTools/Records/interface/TransientTrackRecord.h"
 #include "RecoVertex/VertexPrimitives/interface/TransientVertex.h"
@@ -47,7 +50,6 @@
 #include "DataFormats/TauReco/interface/PFTauDiscriminator.h"
 #include "CommonTools/Utils/interface/StringCutObjectSelector.h"
 #include <memory>
-#include <boost/foreach.hpp>
 #include <TFormula.h>
 
 #include <memory>
@@ -74,6 +76,8 @@ class PFTauPrimaryVertexProducer final : public edm::stream::EDProducer<> {
   ~PFTauPrimaryVertexProducer() override;
   void produce(edm::Event&,const edm::EventSetup&) override;
 
+  static void fillDescriptions(edm::ConfigurationDescriptions & descriptions);
+
  private:
   edm::InputTag PFTauTag_;
   edm::EDGetTokenT<std::vector<reco::PFTau> >PFTauToken_;
@@ -92,8 +96,8 @@ class PFTauPrimaryVertexProducer final : public edm::stream::EDProducer<> {
   bool RemoveMuonTracks_;
   bool RemoveElectronTracks_;
   DiscCutPairVec discriminators_;
-  std::auto_ptr<StringCutObjectSelector<reco::PFTau> > cut_;
-  std::auto_ptr<tau::RecoTauVertexAssociator> vertexAssociator_;
+  std::unique_ptr<StringCutObjectSelector<reco::PFTau> > cut_;
+  std::unique_ptr<tau::RecoTauVertexAssociator> vertexAssociator_;
 };
 
 PFTauPrimaryVertexProducer::PFTauPrimaryVertexProducer(const edm::ParameterSet& iConfig):
@@ -117,7 +121,7 @@ PFTauPrimaryVertexProducer::PFTauPrimaryVertexProducer(const edm::ParameterSet& 
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   std::vector<edm::ParameterSet> discriminators =iConfig.getParameter<std::vector<edm::ParameterSet> >("discriminators");
   // Build each of our cuts
-  BOOST_FOREACH(const edm::ParameterSet &pset, discriminators) {
+  for(auto const& pset : discriminators) {
     DiscCutPair* newCut = new DiscCutPair();
     newCut->inputToken_ =consumes<reco::PFTauDiscriminator>(pset.getParameter<edm::InputTag>("discriminator"));
 
@@ -125,8 +129,8 @@ PFTauPrimaryVertexProducer::PFTauPrimaryVertexProducer(const edm::ParameterSet& 
     else newCut->cut_ = pset.getParameter<double>("selectionCut");
     discriminators_.push_back(newCut);
   }
-  // Build a string cut if desired
-  if (iConfig.exists("cut")) cut_.reset(new StringCutObjectSelector<reco::PFTau>(iConfig.getParameter<std::string>( "cut" )));
+  // Build a string cut
+  cut_.reset(new StringCutObjectSelector<reco::PFTau>(iConfig.getParameter<std::string>( "cut" )));
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   produces<edm::AssociationVector<PFTauRefProd, std::vector<reco::VertexRef> > >();
   produces<VertexCollection>("PFTauPrimaryVertices"); 
@@ -162,7 +166,7 @@ void PFTauPrimaryVertexProducer::produce(edm::Event& iEvent,const edm::EventSetu
   reco::VertexRefProd VertexRefProd_out = iEvent.getRefBeforePut<reco::VertexCollection>("PFTauPrimaryVertices");
 
   // Load each discriminator
-  BOOST_FOREACH(DiscCutPair *disc, discriminators_) {
+  for(auto& disc : discriminators_) {
     edm::Handle<reco::PFTauDiscriminator> discr;
     iEvent.getByToken(disc->inputToken_, discr);
     disc->discr_ = &(*discr);
@@ -186,7 +190,7 @@ void PFTauPrimaryVertexProducer::produce(edm::Event& iEvent,const edm::EventSetu
       ///////////////////////
       // Check if it passed all the discrimiantors
       bool passed(true); 
-      BOOST_FOREACH(const DiscCutPair* disc, discriminators_) {
+      for(auto const& disc : discriminators_) {
         // Check this discriminator passes
 	bool passedDisc = true;
 	if ( disc->cutFormula_ )passedDisc = (disc->cutFormula_->Eval((*disc->discr_)[tau]) > 0.5);
@@ -270,5 +274,79 @@ void PFTauPrimaryVertexProducer::produce(edm::Event& iEvent,const edm::EventSetu
   iEvent.put(std::move(VertexCollection_out),"PFTauPrimaryVertices");
   iEvent.put(std::move(AVPFTauPV));
 }
-  
+
+void
+PFTauPrimaryVertexProducer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
+  // PFTauPrimaryVertexProducer
+  edm::ParameterSetDescription desc;
+
+  {
+    edm::ParameterSetDescription vpsd1;
+    vpsd1.add<edm::InputTag>("discriminator");
+    vpsd1.add<double>("selectionCut");
+    desc.addVPSet("discriminators", vpsd1);
+  }
+
+  {
+    edm::ParameterSetDescription pset_signalQualityCuts;
+    pset_signalQualityCuts.add<double>("maxDeltaZ", 0.4);
+    pset_signalQualityCuts.add<double>("minTrackPt", 0.5);
+    pset_signalQualityCuts.add<double>("minTrackVertexWeight", -1.0);
+    pset_signalQualityCuts.add<double>("maxTrackChi2", 100.0);
+    pset_signalQualityCuts.add<unsigned int>("minTrackPixelHits", 0);
+    pset_signalQualityCuts.add<double>("minGammaEt", 1.0);
+    pset_signalQualityCuts.add<unsigned int>("minTrackHits", 3);
+    pset_signalQualityCuts.add<double>("minNeutralHadronEt", 30.0);
+    pset_signalQualityCuts.add<double>("maxTransverseImpactParameter", 0.1);
+    pset_signalQualityCuts.addOptional<bool>("useTracksInsteadOfPFHadrons");
+
+    edm::ParameterSetDescription pset_vxAssocQualityCuts;
+    pset_vxAssocQualityCuts.add<double>("minTrackPt", 0.5);
+    pset_vxAssocQualityCuts.add<double>("minTrackVertexWeight", -1.0);
+    pset_vxAssocQualityCuts.add<double>("maxTrackChi2", 100.0);
+    pset_vxAssocQualityCuts.add<unsigned int>("minTrackPixelHits", 0);
+    pset_vxAssocQualityCuts.add<double>("minGammaEt", 1.0);
+    pset_vxAssocQualityCuts.add<unsigned int>("minTrackHits", 3);
+    pset_vxAssocQualityCuts.add<double>("maxTransverseImpactParameter", 0.1);
+    pset_vxAssocQualityCuts.addOptional<bool>("useTracksInsteadOfPFHadrons");
+
+    edm::ParameterSetDescription pset_isolationQualityCuts;
+    pset_isolationQualityCuts.add<double>("maxDeltaZ", 0.2);
+    pset_isolationQualityCuts.add<double>("minTrackPt", 1.0);
+    pset_isolationQualityCuts.add<double>("minTrackVertexWeight", -1.0);
+    pset_isolationQualityCuts.add<double>("maxTrackChi2", 100.0);
+    pset_isolationQualityCuts.add<unsigned int>("minTrackPixelHits", 0);
+    pset_isolationQualityCuts.add<double>("minGammaEt", 1.5);
+    pset_isolationQualityCuts.add<unsigned int>("minTrackHits", 8);
+    pset_isolationQualityCuts.add<double>("maxTransverseImpactParameter", 0.03);
+    pset_isolationQualityCuts.addOptional<bool>("useTracksInsteadOfPFHadrons");
+
+    edm::ParameterSetDescription pset_qualityCuts;
+    pset_qualityCuts.add<edm::ParameterSetDescription>("signalQualityCuts",    pset_signalQualityCuts);
+    pset_qualityCuts.add<edm::ParameterSetDescription>("vxAssocQualityCuts",   pset_vxAssocQualityCuts);
+    pset_qualityCuts.add<edm::ParameterSetDescription>("isolationQualityCuts", pset_isolationQualityCuts);
+    pset_qualityCuts.add<std::string>("leadingTrkOrPFCandOption", "leadPFCand");
+    pset_qualityCuts.add<std::string>("pvFindingAlgo", "closestInDeltaZ");
+    pset_qualityCuts.add<edm::InputTag>("primaryVertexSrc", edm::InputTag("offlinePrimaryVertices"));
+    pset_qualityCuts.add<bool>("vertexTrackFiltering", false);
+    pset_qualityCuts.add<bool>("recoverLeadingTrk", false);
+
+    desc.add<edm::ParameterSetDescription>("qualityCuts", pset_qualityCuts);
+  }
+
+  desc.add<std::string>("cut", "pt > 18.0 & abs(eta)<2.3");
+  desc.add<int>("Algorithm", 0);
+  desc.add<bool>("RemoveElectronTracks", false);
+  desc.add<bool>("RemoveMuonTracks",     false);
+  desc.add<bool>("useBeamSpot",          true);
+  desc.add<bool>("useSelectedTaus",      false);
+  desc.add<edm::InputTag>("beamSpot",    edm::InputTag("offlineBeamSpot"));
+  desc.add<edm::InputTag>("ElectronTag", edm::InputTag("MyElectrons"));
+  desc.add<edm::InputTag>("PFTauTag",    edm::InputTag("hpsPFTauProducer"));
+  desc.add<edm::InputTag>("MuonTag",     edm::InputTag("MyMuons"));
+  desc.add<edm::InputTag>("PVTag",       edm::InputTag("offlinePrimaryVertices"));
+
+  descriptions.add("PFTauPrimaryVertexProducer", desc);
+}
+
 DEFINE_FWK_MODULE(PFTauPrimaryVertexProducer);

@@ -6,7 +6,7 @@
 #include "DetectorDescription/Core/interface/DDName.h"
 #include "DetectorDescription/Core/interface/DDSolid.h"
 #include "DetectorDescription/Core/interface/DDTransform.h"
-#include "DetectorDescription/Core/interface/DDUnits.h"
+#include "DataFormats/Math/interface/GeantUnits.h"
 #include "DetectorDescription/Parser/src/DDDividedGeometryObject.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 
@@ -16,7 +16,7 @@
 
 class DDCompactView;
 
-using namespace dd::operators;
+using namespace geant_units::operators;
 
 DDDividedConsRho::DDDividedConsRho( const DDDivision& div, DDCompactView* cpv )
   : DDDividedGeometryObject::DDDividedGeometryObject( div, cpv )
@@ -149,12 +149,11 @@ DDDividedConsPhi::makeDDRotation( const int copyNo ) const
 {
   DDRotation myddrot; // sets to identity.
   double posi = ( copyNo - 1 ) * compWidth_;
-  DDRotationMatrix* rotMat = changeRotMatrix( posi );
   // how to name the rotation??
   // i hate this crap :-)
   DDName ddrotname(div_.parent().ddname().name() + "_DIVCHILD_ROT" + std::to_string(copyNo),
 		   div_.parent().ddname().ns());
-  myddrot = DDrot(ddrotname, rotMat);
+  myddrot = DDrot( ddrotname, changeRotMatrix( posi ));
 
   return myddrot;
 }

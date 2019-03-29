@@ -131,8 +131,7 @@ RecoTauPiZeroStripPlugin2::RecoTauPiZeroStripPlugin2(const edm::ParameterSet& ps
     combinatoricStripMassHypo_ = pset.getParameter<double>("stripMassWhenCombining");
   }
 
-  verbosity_ = ( pset.exists("verbosity") ) ?
-    pset.getParameter<int>("verbosity") : 0;
+  verbosity_ = pset.getParameter<int>("verbosity");
 }
   
 RecoTauPiZeroStripPlugin2::~RecoTauPiZeroStripPlugin2()
@@ -319,12 +318,10 @@ RecoTauPiZeroStripPlugin2::return_type RecoTauPiZeroStripPlugin2::operator()(con
               111, 10001, true, RecoTauPiZero::kUndefined));
 
         // Now loop over the strip members
-        BOOST_FOREACH(const RecoTauPiZero::daughters::value_type& gamma,
-            first->daughterPtrVector()) {
+        for(auto const& gamma : first->daughterPtrVector()) {
           combinedStrips->addDaughter(gamma);
         }
-        BOOST_FOREACH(const RecoTauPiZero::daughters::value_type& gamma,
-            second->daughterPtrVector()) {
+        for(auto const& gamma : second->daughterPtrVector()) {
           combinedStrips->addDaughter(gamma);
         }
         // Update the vertex

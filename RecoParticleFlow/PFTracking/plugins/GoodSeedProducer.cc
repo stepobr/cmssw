@@ -23,9 +23,10 @@
 #include "TrackingTools/Records/interface/TransientRecHitRecord.h"  
 #include "TrackingTools/Records/interface/TrackingComponentsRecord.h" 
 #include "TrackingTools/TrajectoryState/interface/TrajectoryStateTransform.h"
-#include "FastSimulation/BaseParticlePropagator/interface/BaseParticlePropagator.h"
+#include "CommonTools/BaseParticlePropagator/interface/BaseParticlePropagator.h"
 #include "MagneticField/Engine/interface/MagneticField.h"
 #include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
+#include "CommonTools/MVAUtils/interface/GBRForestTools.h"
 
 #include "DataFormats/Math/interface/deltaR.h"
 
@@ -33,7 +34,6 @@
 #include <string>
 #include "TMath.h"
 #include "Math/VectorUtil.h"
-#include "TMVA/MethodBDT.h"
 
 using namespace edm;
 using namespace std;
@@ -243,9 +243,8 @@ GoodSeedProducer::produce(Event& iEvent, const EventSetup& iSetup)
 						      Tk[i].outerPosition().z(),
 						      0.);
 
-	  BaseParticlePropagator theOutParticle( RawParticle(mom,pos),
+	  BaseParticlePropagator theOutParticle( RawParticle(mom,pos, Tk[i].charge()),
 				    0,0,B_.z());
-	  theOutParticle.setCharge(Tk[i].charge());
       
 	  theOutParticle.propagateToEcalEntrance(false);
       
@@ -261,9 +260,9 @@ GoodSeedProducer::produce(Event& iEvent, const EventSetup& iSetup)
 	  PFClusterRef clusterRef;
 	  math::XYZPoint meanShowerSaved;
 	  if(theOutParticle.getSuccess()!=0){
-	     ElecTrkEcalPos=GlobalPoint(theOutParticle.vertex().x(),
-			       	        theOutParticle.vertex().y(),
-					theOutParticle.vertex().z()
+	     ElecTrkEcalPos=GlobalPoint(theOutParticle.particle().vertex().x(),
+			       	        theOutParticle.particle().vertex().y(),
+					theOutParticle.particle().vertex().z()
                                        );
 
             constexpr float psLim = 2.50746495928f; // std::sinh(1.65f);
@@ -281,7 +280,7 @@ GoodSeedProducer::produce(Event& iEvent, const EventSetup& iSetup)
 		= PFCluster::getDepthCorrection(aClus->correctedEnergy(),
 						isBelowPS,
 						false);
-	      auto mom = theOutParticle.momentum().Vect();
+	      auto mom = theOutParticle.particle().momentum().Vect();
 	      auto meanShower = ElecTrkEcalPos +
 		GlobalVector(mom.x(),mom.y(),mom.z()).unit()*ecalShowerDepth;	
 	  
@@ -370,10 +369,7 @@ GoodSeedProducer::produce(Event& iEvent, const EventSetup& iSetup)
 	    trk_ecalDphi = trk_ecalDphi_;
       
 	    Trajectory::ConstRecHitContainer tmp;
-            auto hb = Tk[i].recHitsBegin();
-            for(unsigned int h=0;h<Tk[i].recHitsSize();h++){
-              auto recHit = *(hb+h); tmp.push_back(recHit->cloneSH());
-            }
+            for(auto const& hit : Tk[i].recHits()) tmp.push_back(hit->cloneSH());
             auto const & theTrack = Tk[i]; 
             GlobalVector gv(theTrack.innerMomentum().x(),theTrack.innerMomentum().y(),theTrack.innerMomentum().z());
             GlobalPoint  gp(theTrack.innerPosition().x(),theTrack.innerPosition().y(),theTrack.innerPosition().z());
@@ -490,7 +486,6 @@ namespace goodseedhelpers {
     const bool useTmva = conf.getUntrackedParameter<bool>("UseTMVA",false);
     
     if( useTmva ) {
-      const std::string method_ = conf.getParameter<string>("TMVAMethod");
       std::array<edm::FileInPath,kMaxWeights> weights = {{ edm::FileInPath(conf.getParameter<string>("Weights1")),
                                                            edm::FileInPath(conf.getParameter<string>("Weights2")),
                                                            edm::FileInPath(conf.getParameter<string>("Weights3")),
@@ -502,22 +497,7 @@ namespace goodseedhelpers {
                                                            edm::FileInPath(conf.getParameter<string>("Weights9")) }};
             
       for(UInt_t j = 0; j < gbr.size(); ++j){
-        TMVA::Reader reader("!Color:Silent");
-                
-        reader.AddVariable("NHits", &nhit);
-        reader.AddVariable("NormChi", &chikfred);
-        reader.AddVariable("dPtGSF", &dpt);
-        reader.AddVariable("EoP", &eP);
-        reader.AddVariable("ChiRatio", &chiRatio);
-        reader.AddVariable("RedChi", &chired);
-        reader.AddVariable("EcalDEta", &trk_ecalDeta);
-        reader.AddVariable("EcalDPhi", &trk_ecalDphi);
-        reader.AddVariable("pt", &pt);
-        reader.AddVariable("eta", &eta);
-        
-        reader.BookMVA(method_, weights[j].fullPath().c_str());
-        
-        gbr[j].reset( new GBRForest( dynamic_cast<TMVA::MethodBDT*>( reader.FindMVA(method_) ) ) );
+        gbr[j] = createGBRForest( weights[j] );
       }    
     }
   }

@@ -40,9 +40,9 @@ SiStripQualityHotStripIdentifier::SiStripQualityHotStripIdentifier(const edm::Pa
 SiStripQualityHotStripIdentifier::~SiStripQualityHotStripIdentifier(){
 }
 
-SiStripBadStrip* SiStripQualityHotStripIdentifier::getNewObject(){
+std::unique_ptr<SiStripBadStrip> SiStripQualityHotStripIdentifier::getNewObject(){
 
-  SiStripBadStrip* obj=new SiStripBadStrip();
+  auto obj = std::make_unique<SiStripBadStrip>();
   
   edm::ParameterSet parameters=conf_.getParameter<edm::ParameterSet>("AlgoParameters");
   std::string AlgoName = parameters.getParameter<std::string>("AlgoName");
@@ -172,8 +172,7 @@ void SiStripQualityHotStripIdentifier::algoAnalyze(const edm::Event& e, const ed
 	<<"\n\t\touter PT "<< track->outerPt()<<std::endl;
 
       //Loop on rechits
-      for (trackingRecHit_iterator it = track->recHitsBegin();  it != track->recHitsEnd(); ++it){
-	const TrackingRecHit* recHit = &(**it);
+      for(auto const& recHit : track->recHits()) {
 	
 	if (!recHit->isValid()){
 	  LogTrace("SiStripQualityHotStripIdentifier") <<"\t\t Invalid Hit "<<std::endl;

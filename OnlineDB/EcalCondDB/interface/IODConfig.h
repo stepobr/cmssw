@@ -88,7 +88,7 @@ void populateClob (Clob &clob, std::string fname, unsigned int bufsize) noexcept
       std::cout << "Populating the Clob using writeBuffer(Stream) method" << std::endl;
       std::cout<<"we are here0"<<std::endl; 
 
-      char *file = (char *)fname.c_str();
+      const char *file = fname.c_str();
       std::cout<<"we are here0.5 file is:"<<fname<<std::endl; 
 
       std::ifstream inFile;
@@ -99,7 +99,7 @@ void populateClob (Clob &clob, std::string fname, unsigned int bufsize) noexcept
 	  inFile.close();
 
 	  std::string fname2="/nfshome0/ecaldev/francesca/null_file.txt";
-	  inFile.open((char*)fname2.c_str(),std::ios::in);
+	  inFile.open(fname2.c_str(),std::ios::in);
 	  
 
           
@@ -144,7 +144,7 @@ void populateClob (Clob &clob, std::string fname, unsigned int bufsize) noexcept
 
 
   }catch (SQLException &e) {
-    throw(std::runtime_error(std::string("populateClob():  ")+getOraMessage(&e)));
+    throw(std::runtime_error(std::string("populateClob():  ")+e.getMessage()));
   }
 
   std::cout << "Populating the Clob - Success" << std::endl;
@@ -172,7 +172,7 @@ unsigned char* readClob (Clob &clob, int size) noexcept(false)
     return  buffer;
 
   }catch (SQLException &e) {
-    throw(std::runtime_error(std::string("readClob():  ")+getOraMessage(&e)));
+    throw(std::runtime_error(std::string("readClob():  ")+e.getMessage()));
   }
 
 }

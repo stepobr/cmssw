@@ -87,6 +87,8 @@ g4SimHits = cms.EDProducer("OscarMTProducer",
                 Stepper = cms.string('G4DormandPrince745'),
                 Type = cms.string('CMSIMField'),
                 StepperParam = cms.PSet(
+                    VacRegions = cms.vstring(),
+#                   VacRegions = cms.vstring('DefaultRegionForTheWorld','BeamPipeVacuum','BeamPipeOutside'),
                     MaximumEpsilonStep = cms.untracked.double(0.01),   ## in mm
                     DeltaOneStep = cms.double(0.001),      ## in mm
                     MaximumLoopCounts = cms.untracked.double(1000.0),
@@ -94,11 +96,13 @@ g4SimHits = cms.EDProducer("OscarMTProducer",
                     MinStep = cms.double(0.1),      ## in mm
                     DeltaIntersectionAndOneStep = cms.untracked.double(-1.0),
                     DeltaIntersection = cms.double(0.0001),## in mm
+                    MaxStep = cms.double(100000.),         ## in cm
                     MinimumEpsilonStep = cms.untracked.double(1e-05), ## in mm
                     EnergyThSimple = cms.double(0.002),               ## in GeV
                     DeltaChordSimple = cms.double(0.1),    ## in mm
                     DeltaOneStepSimple = cms.double(0.1),  ## in mm
                     DeltaIntersectionSimple = cms.double(0.01),       ## in mm
+                    MaxStepSimple = cms.double(100000.),   ## in cm
                 )
             )
         ),
@@ -128,7 +132,7 @@ g4SimHits = cms.EDProducer("OscarMTProducer",
         ExoticaPhysicsSS     = cms.untracked.bool(False),
         RhadronPhysics       = cms.bool(False),
         DarkMPFactor         = cms.double(1.0),
-        Region      = cms.string(' '),
+        Region      = cms.string(''),
         TrackingCut = cms.bool(False),
         SRType      = cms.bool(True),
         FlagMuNucl  = cms.bool(False),
@@ -154,7 +158,11 @@ g4SimHits = cms.EDProducer("OscarMTProducer",
         ElectronStepLimit         = cms.bool(False),
         ElectronRangeTest         = cms.bool(False),
         PositronStepLimit         = cms.bool(False),
-        MinStepLimit              = cms.double(1.0)
+        MinStepLimit              = cms.double(1.0),
+        ModifyTransportation      = cms.bool(False),
+        ThresholdWarningEnergy    = cms.untracked.double(100.0),
+        ThresholdImportantEnergy  = cms.untracked.double(250.0),
+        ThresholdTrials           = cms.untracked.int32(10)
     ),
     Generator = cms.PSet(
         HectorEtaCut,
@@ -179,11 +187,11 @@ g4SimHits = cms.EDProducer("OscarMTProducer",
         )
     ),
     RunAction = cms.PSet(
-        StopFile = cms.string('StopRun')
+        StopFile = cms.string('')
     ),
     EventAction = cms.PSet(
         debug = cms.untracked.bool(False),
-        StopFile = cms.string('StopRun'),
+        StopFile = cms.string(''),
         PrintRandomSeed = cms.bool(False),
         CollapsePrimaryVertices = cms.bool(False)
     ),
@@ -413,7 +421,7 @@ g4SimHits = cms.EDProducer("OscarMTProducer",
     ),
     MtdSD = cms.PSet(
         Verbosity = cms.untracked.int32(0),
-        TimeSliceUnit    = cms.double(0.001), #stepping = 1 ps (for timing)
+        TimeSliceUnit    = cms.double(0.01), #stepping = 10 ps (for timing)
         IgnoreTrackID    = cms.bool(False),
         EminHit          = cms.double(0.0),
         CheckID          = cms.untracked.bool(True),
@@ -428,6 +436,7 @@ g4SimHits = cms.EDProducer("OscarMTProducer",
         StoreAllG4Hits   = cms.bool(False),
         RejectMouseBite  = cms.bool(False),
         RotatedWafer     = cms.bool(False),
+        CornerMinMask    = cms.int32(0),
         WaferAngles      = cms.untracked.vdouble(90.0,30.0),
         WaferSize        = cms.untracked.double(123.7),
         MouseBite        = cms.untracked.double(2.5),
@@ -454,6 +463,7 @@ g4SimHits = cms.EDProducer("OscarMTProducer",
         StoreAllG4Hits   = cms.bool(False),
         RejectMouseBite  = cms.bool(False),
         RotatedWafer     = cms.bool(False),
+        CornerMinMask    = cms.int32(0),
         WaferAngles      = cms.untracked.vdouble(90.0,30.0),
         CheckID          = cms.untracked.bool(True),
     ),
@@ -526,6 +536,8 @@ g4SimHits = cms.EDProducer("OscarMTProducer",
 ##
 from Configuration.Eras.Modifier_run2_common_cff import run2_common
 run2_common.toModify( g4SimHits.HFShowerLibrary, FileName = 'SimG4CMS/Calo/data/HFShowerLibrary_npmt_noatt_eta4_16en_v4.root' )
+run2_common.toModify( g4SimHits.HFShower, ProbMax = 0.5)
+
 from Configuration.Eras.Modifier_run2_HCAL_2017_cff import run2_HCAL_2017
 run2_HCAL_2017.toModify( g4SimHits, HCalSD = dict( TestNumberingScheme = True ) )
 from Configuration.Eras.Modifier_phase2_timing_cff import phase2_timing

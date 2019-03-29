@@ -21,6 +21,9 @@
 
 class GeomDetType;
 
+namespace cms {
+  class DTGeometryBuilder;
+}
 
 class DTGeometry : public TrackingGeometry {
 
@@ -32,6 +35,8 @@ class DTGeometry : public TrackingGeometry {
 
     /// Destructor
     ~DTGeometry() override;
+
+    void clear();
 
     //---- Base class' interface 
 
@@ -79,13 +84,15 @@ class DTGeometry : public TrackingGeometry {
     const DTLayer* layer(const DTLayerId& id) const;
 
 
-  private:
-  
+ private:
+
+    friend class cms::DTGeometryBuilder;
     friend class DTGeometryBuilderFromDDD;
     friend class DTGeometryBuilderFromCondDB;
 
     friend class GeometryAligner;
 
+    void deallocate();
 
     /// Add a DTChamber to Geometry
     void add(DTChamber* ch);

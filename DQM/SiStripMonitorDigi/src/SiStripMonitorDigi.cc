@@ -41,8 +41,9 @@
 #include "Geometry/Records/interface/TrackerTopologyRcd.h"
 
 /* mia: but is there not a smarter way ?!?!?! */
-const double NORBITS_PER_SECOND = 11223.;
-const double NORBITS_PER_LS     = 262144.;
+namespace {
+  const double NORBITS_PER_LS     = 262144.; // per-second value would be 11223
+}
 
 //--------------------------------------------------------------------------------------------
 SiStripMonitorDigi::SiStripMonitorDigi(const edm::ParameterSet& iConfig) :
@@ -243,11 +244,10 @@ void SiStripMonitorDigi::dqmBeginRun(const edm::Run& run, const edm::EventSetup&
     //const int siStripFedIdMin = FEDNumbering::MINSiStripFEDID;
     //const int siStripFedIdMax = FEDNumbering::MAXSiStripFEDID;
 
-    edm::eventsetup::EventSetupRecordKey recordKey(edm::eventsetup::EventSetupRecordKey::TypeTag::findType("RunInfoRcd"));
-    if( es.find( recordKey ) != nullptr) {
+    if(auto runInfoRec = es.tryToGet<RunInfoRcd>()) {
 
       edm::ESHandle<RunInfo> sumFED;
-      es.get<RunInfoRcd>().get(sumFED);
+      runInfoRec->get(sumFED);
 
       if ( sumFED.isValid() ) {
 	std::vector<int> FedsInIds= sumFED->m_fed_in;

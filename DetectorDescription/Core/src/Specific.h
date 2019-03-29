@@ -13,7 +13,6 @@
 
 class DDExpandedView;
 class DDLogicalPart;
-class DDNodes;
 class DDPartSelection;
 
 namespace DDI {
@@ -28,8 +27,6 @@ namespace DDI {
     Specific(const std::vector<DDPartSelection> & selections,
              const DDsvalues_type & specs);	      
     
-    ~Specific() { } 
-    	     
     const std::vector<DDPartSelection> & selection() const;
     
     void updateLogicalPart(std::vector<std::pair<DDLogicalPart, std::pair<const DDPartSelection*, const DDsvalues_type*> > >&) const;

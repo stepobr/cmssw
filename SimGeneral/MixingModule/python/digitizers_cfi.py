@@ -55,9 +55,16 @@ from SimCalorimetry.HGCalSimProducers.hgcalDigitizer_cfi import hgceeDigitizer, 
 
 from Configuration.Eras.Modifier_phase2_hgcal_cff import phase2_hgcal
 phase2_hgcal.toModify( theDigitizers,
-                            hgceeDigitizer = cms.PSet(hgceeDigitizer),
-                            hgchebackDigitizer = cms.PSet(hgchebackDigitizer),
-                            hgchefrontDigitizer = cms.PSet(hgchefrontDigitizer),
+                       hgceeDigitizer = cms.PSet(hgceeDigitizer),
+                       hgchebackDigitizer = cms.PSet(hgchebackDigitizer),
+                       hgchefrontDigitizer = cms.PSet(hgchefrontDigitizer),
+)
+
+from SimCalorimetry.HGCalSimProducers.hgcalDigitizer_cfi import hfnoseDigitizer
+
+from Configuration.Eras.Modifier_phase2_hfnose_cff import phase2_hfnose
+phase2_hfnose.toModify( theDigitizers,
+                        hfnoseDigitizer = cms.PSet(hfnoseDigitizer),
 )
 
 from Configuration.Eras.Modifier_run3_common_cff import run3_common
@@ -74,9 +81,10 @@ phase2_timing_layer.toModify( theDigitizers,
                         fastTimingLayer = fastTimeDigitizer.clone() )
 
 from SimFastTiming.Configuration.SimFastTiming_cff import mtdDigitizer
-from Configuration.Eras.Modifier_phase2_timing_layer_new_cff import phase2_timing_layer_new
-phase2_timing_layer_new.toModify( theDigitizers,
-                        fastTimingLayer = mtdDigitizer.clone() )
+from Configuration.Eras.Modifier_phase2_timing_layer_tile_cff import phase2_timing_layer_tile
+from Configuration.Eras.Modifier_phase2_timing_layer_bar_cff import phase2_timing_layer_bar
+(phase2_timing_layer_tile | phase2_timing_layer_bar).toModify( theDigitizers,
+                                                               fastTimingLayer = mtdDigitizer.clone() )
 
 premix_stage2.toModify(theDigitizers,
     ecal = None,
@@ -86,6 +94,9 @@ premix_stage2.toModify(theDigitizers,
     hgceeDigitizer = dict(premixStage1 = True),
     hgchebackDigitizer = dict(premixStage1 = True),
     hgchefrontDigitizer = dict(premixStage1 = True),
+)
+(premix_stage2 & phase2_hfnose).toModify(theDigitizers,
+    hfnoseDigitizer = dict(premixStage1 = True),
 )
 
 theDigitizersValid = cms.PSet(theDigitizers)

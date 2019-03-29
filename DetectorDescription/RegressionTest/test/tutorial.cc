@@ -18,8 +18,6 @@
 #include "DetectorDescription/Core/interface/DDLogicalPart.h"
 #include "DetectorDescription/Core/interface/DDMaterial.h"
 #include "DetectorDescription/Core/interface/DDName.h"
-#include "DetectorDescription/Core/interface/DDNodes.h"
-#include "DetectorDescription/Core/interface/DDNumberingScheme.h"
 #include "DetectorDescription/Core/interface/DDPartSelection.h"
 #include "DetectorDescription/Core/interface/DDPosData.h"
 #include "DetectorDescription/Core/interface/DDScope.h"
@@ -27,12 +25,12 @@
 #include "DetectorDescription/Core/interface/DDTransform.h"
 #include "DetectorDescription/Core/interface/DDValue.h"
 #include "DetectorDescription/Core/interface/DDsvalues.h"
-#include "DetectorDescription/Core/interface/DDUnits.h"
+#include "DataFormats/Math/interface/GeantUnits.h"
 #include "DataFormats/Math/interface/Graph.h"
 #include "DetectorDescription/Core/interface/ClhepEvaluator.h"
 #include "FWCore/Utilities/interface/Exception.h"
 
-using namespace dd::operators;
+using namespace geant_units::operators;
 
 namespace {
   class GroupFilter : public DDFilter {
@@ -68,7 +66,7 @@ DDTranslation calc(const DDGeoHistory & aHist)
     vt.emplace_back(h[1].posdata()->translation());
     unsigned int i = 1;
     for (; i <= sz-2; ++i) {
-      vr.emplace_back( vr.back() * *(h[i].posdata()->ddrot().rotation()) );
+      vr.emplace_back( vr.back() * h[i].posdata()->ddrot().rotation());
       vt.emplace_back(h[i+1].posdata()->translation());
     }
   }
@@ -104,9 +102,9 @@ void goPersistent(const DDCompactView & cv, const std::string& file) {
       int copyno = g.edgeData(eit->second)->copyno();
       double x,y,z;
       
-      x = CONVERT_TO( g.edgeData(eit->second)->trans().x(), mm );
-      y = CONVERT_TO( g.edgeData(eit->second)->trans().y(), mm );
-      z = CONVERT_TO( g.edgeData(eit->second)->trans().z(), mm );
+      x = g.edgeData(eit->second)->trans().x();
+      y = g.edgeData(eit->second)->trans().y();
+      z = g.edgeData(eit->second)->trans().z();
       f << node << " " << eindex << " " << copyno 
         << " " << x << " " << y << " " << z 
 	<< " " << g.edgeData(eit->second)->ddrot().ddname().ns()
@@ -150,7 +148,7 @@ void dumpHistory(const DDGeoHistory & h, bool short_dump=false)
     if (!short_dump) { 
       DDAxisAngle ra(h[i].absRotation());
       std::cout  << h[i].absTranslation() 
-		 << ra.Axis() << CONVERT_TO( ra.Angle(), deg );
+		 << ra.Axis() << convertRadToDeg( ra.Angle() );
     }	  
   }
 }
@@ -185,6 +183,9 @@ struct NodeComp
 };
 
 #include<algorithm> // sort
+
+using DDNodes = std::vector<DDExpandedNode>;
+
 void dump_nodes(DDNodes & nodes, int max=100)
 {
   DDNodes::iterator it = nodes.begin();
@@ -388,7 +389,6 @@ void tutorial()
       std::cout << "creating the default numbering scheme ..." << std::endl;
   
       DDExpandedView eeeee(aaaaa);
-      DDDefaultNumberingScheme nums(eeeee);
   
       std::cout << "do sibling-stack navigation?";
       std::cin >> ans;
@@ -411,7 +411,6 @@ void tutorial()
 	  std::cout << "input=" << n << std::endl;
 	  if (e.goTo(n)) {
 	    std::cout << "node=" << e.geoHistory() << std::endl;
-	    std::cout << "  id=" << nums.id(e) << std::endl;  
 	  }
 	  else {
 	    std::cout << "no match!" << std::endl;
@@ -431,12 +430,6 @@ void tutorial()
 	  int s;
 	  std::cin >> s;
 	  go = (bool)s;
-	  if (nums.node(s,e)) {
-	    std::cout << "node=" << e.geoHistory() << std::endl;
-	  }
-	  else {
-	    std::cout << "no match!" << std::endl;
-	  }    
 	}
       }  
     }
@@ -506,12 +499,12 @@ void tutorial()
 	  {	 
 	    DDAxisAngle   aa(fv.rotation());
 	    std::cout << "rotation: axis=" << aa.Axis() 
-		      << " angle=" << CONVERT_TO( aa.Angle(), deg ) << std::endl << std::endl;
+		      << " angle=" << convertRadToDeg( aa.Angle() ) << std::endl << std::endl;
 	  }
 	  std::cout << "sibling-stack=" << fv.navPos() << std::endl << std::endl;
 	  std::cout << "material=" << fv.logicalPart().material().ddname() << std::endl;
 	  std::cout << "solid=" << fv.logicalPart().solid().ddname() <<
-	    " volume[m3]=" << CONVERT_TO( fv.logicalPart().solid().volume(), m3 ) << std::endl;	      
+	    " volume[m3]=" << convertMm3ToM3(fv.logicalPart().solid().volume()) << std::endl;
 	  break;
 	case 'e':
 	  break;	 
@@ -618,4 +611,3 @@ void tutorial()
     dumpHistory(exx.geoHistory());
   }
 }
-

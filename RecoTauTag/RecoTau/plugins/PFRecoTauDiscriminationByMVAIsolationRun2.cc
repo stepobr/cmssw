@@ -17,6 +17,9 @@
 
 #include "FWCore/Utilities/interface/Exception.h"
 
+#include <FWCore/ParameterSet/interface/ConfigurationDescriptions.h>
+#include <FWCore/ParameterSet/interface/ParameterSetDescription.h>
+
 #include "DataFormats/Candidate/interface/Candidate.h"
 #include "DataFormats/TauReco/interface/PFTau.h"
 #include "DataFormats/TauReco/interface/PFTauFwd.h"
@@ -62,6 +65,8 @@ namespace
   }
 }
 
+namespace reco { namespace tau {
+
 class PFRecoTauDiscriminationByMVAIsolationRun2 : public PFTauDiscriminationProducerBase  
 {
  public:
@@ -73,11 +78,9 @@ class PFRecoTauDiscriminationByMVAIsolationRun2 : public PFTauDiscriminationProd
       category_output_()
   {
     mvaName_ = cfg.getParameter<std::string>("mvaName");
-    loadMVAfromDB_ = cfg.exists("loadMVAfromDB") ? cfg.getParameter<bool>("loadMVAfromDB") : false;
+    loadMVAfromDB_ = cfg.getParameter<bool>("loadMVAfromDB");
     if ( !loadMVAfromDB_ ) {
-      if(cfg.exists("inputFileName")){
 	inputFileName_ = cfg.getParameter<edm::FileInPath>("inputFileName");
-      }else throw cms::Exception("MVA input not defined") << "Requested to load tau MVA input from ROOT file but no file provided in cfg file";
     }    
     std::string mvaOpt_string = cfg.getParameter<std::string>("mvaOpt");
     if      ( mvaOpt_string == "oldDMwoLT" ) mvaOpt_ = kOldDMwoLT;
@@ -108,8 +111,7 @@ class PFRecoTauDiscriminationByMVAIsolationRun2 : public PFTauDiscriminationProd
     PhotonPtSumOutsideSignalCone_token = consumes<reco::PFTauDiscriminator>(cfg.getParameter<edm::InputTag>("srcPhotonPtSumOutsideSignalCone"));
     FootprintCorrection_token = consumes<reco::PFTauDiscriminator>(cfg.getParameter<edm::InputTag>("srcFootprintCorrection"));
   
-    verbosity_ = ( cfg.exists("verbosity") ) ?
-      cfg.getParameter<int>("verbosity") : 0;
+    verbosity_ = cfg.getParameter<int>("verbosity");
 
     produces<PFTauDiscriminator>("category");
   }
@@ -130,6 +132,7 @@ class PFRecoTauDiscriminationByMVAIsolationRun2 : public PFTauDiscriminationProd
     }
   }
 
+  static void fillDescriptions(edm::ConfigurationDescriptions & descriptions);
  private:
 
   std::string moduleLabel_;
@@ -138,7 +141,6 @@ class PFRecoTauDiscriminationByMVAIsolationRun2 : public PFTauDiscriminationProd
   bool loadMVAfromDB_;
   edm::FileInPath inputFileName_;
   const GBRForest* mvaReader_;
-  enum { kOldDMwoLT, kOldDMwLT, kNewDMwoLT, kNewDMwLT, kDBoldDMwLT, kDBnewDMwLT, kPWoldDMwLT, kPWnewDMwLT, kDBoldDMwLTwGJ, kDBnewDMwLTwGJ };
   int mvaOpt_;
   float* mvaInput_;
   
@@ -161,7 +163,6 @@ class PFRecoTauDiscriminationByMVAIsolationRun2 : public PFTauDiscriminationProd
   std::unique_ptr<PFTauDiscriminator> category_output_;
 
   std::vector<TFile*> inputFilesToDelete_;
-  TauIdMVAAuxiliaries clusterVariables_;
 
   int verbosity_;
 };
@@ -219,13 +220,13 @@ double PFRecoTauDiscriminationByMVAIsolationRun2::discriminate(const PFTauRef& t
     float decayDistZ = tauLifetimeInfo.flightLength().z();
     float decayDistMag = std::sqrt(decayDistX*decayDistX + decayDistY*decayDistY + decayDistZ*decayDistZ);
 
-    float nPhoton = (float)clusterVariables_.tau_n_photons_total(*tau);
-    float ptWeightedDetaStrip = clusterVariables_.tau_pt_weighted_deta_strip(*tau, tauDecayMode);
-    float ptWeightedDphiStrip = clusterVariables_.tau_pt_weighted_dphi_strip(*tau, tauDecayMode);
-    float ptWeightedDrSignal = clusterVariables_.tau_pt_weighted_dr_signal(*tau, tauDecayMode);
-    float ptWeightedDrIsolation = clusterVariables_.tau_pt_weighted_dr_iso(*tau, tauDecayMode);
-    float leadingTrackChi2 = clusterVariables_.tau_leadTrackChi2(*tau);
-    float eRatio = clusterVariables_.tau_Eratio(*tau);
+    float nPhoton = (float)reco::tau::n_photons_total(*tau);
+    float ptWeightedDetaStrip = reco::tau::pt_weighted_deta_strip(*tau, tauDecayMode);
+    float ptWeightedDphiStrip = reco::tau::pt_weighted_dphi_strip(*tau, tauDecayMode);
+    float ptWeightedDrSignal = reco::tau::pt_weighted_dr_signal(*tau, tauDecayMode);
+    float ptWeightedDrIsolation = reco::tau::pt_weighted_dr_iso(*tau, tauDecayMode);
+    float leadingTrackChi2 = reco::tau::lead_track_chi2(*tau);
+    float eRatio = reco::tau::eratio(*tau);
 
     // Difference between measured and maximally allowed Gottfried-Jackson angle
     float gjAngleDiff = -999;
@@ -359,4 +360,33 @@ void PFRecoTauDiscriminationByMVAIsolationRun2::endEvent(edm::Event& evt)
   evt.put(std::move(category_output_), "category");
 }
 
+
+void
+PFRecoTauDiscriminationByMVAIsolationRun2::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
+  // pfRecoTauDiscriminationByMVAIsolationRun2
+  edm::ParameterSetDescription desc;
+
+  desc.add<std::string>("mvaName");
+  desc.add<bool>("loadMVAfromDB");
+  desc.addOptional<edm::FileInPath>("inputFileName");
+  desc.add<std::string>("mvaOpt");
+
+  desc.add<edm::InputTag>("srcTauTransverseImpactParameters");
+  desc.add<edm::InputTag>("srcChargedIsoPtSum");
+  desc.add<edm::InputTag>("srcNeutralIsoPtSum");
+  desc.add<edm::InputTag>("srcPUcorrPtSum");
+
+  desc.add<edm::InputTag>("srcPhotonPtSumOutsideSignalCone");
+  desc.add<edm::InputTag>("srcFootprintCorrection");
+
+  desc.add<int>("verbosity", 0);
+
+  fillProducerDescriptions(desc); // inherited from the base
+
+  descriptions.add("pfRecoTauDiscriminationByMVAIsolationRun2", desc);
+}
+
+
 DEFINE_FWK_MODULE(PFRecoTauDiscriminationByMVAIsolationRun2);
+
+}} //namespace

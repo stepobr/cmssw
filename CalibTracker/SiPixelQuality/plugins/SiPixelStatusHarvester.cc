@@ -51,7 +51,7 @@ using namespace edm;
 
 //--------------------------------------------------------------------------------------------------
 SiPixelStatusHarvester::SiPixelStatusHarvester(const edm::ParameterSet& iConfig) :
-  SiPixelPhase1Base(iConfig),
+  HistogramManagerHolder(iConfig),
   outputBase_(iConfig.getParameter<ParameterSet>("SiPixelStatusManagerParameters").getUntrackedParameter<std::string>("outputBase")),
   aveDigiOcc_(iConfig.getParameter<ParameterSet>("SiPixelStatusManagerParameters").getUntrackedParameter<int>("aveDigiOcc")),
   nLumi_(iConfig.getParameter<edm::ParameterSet>("SiPixelStatusManagerParameters").getUntrackedParameter<int>("resetEveryNLumi")),
@@ -81,6 +81,14 @@ void SiPixelStatusHarvester::beginJob() { }
 //--------------------------------------------------------------------------------------------------
 void SiPixelStatusHarvester::endJob() { }  
 
+//--------------------------------------------------------------------------------------------------
+void
+SiPixelStatusHarvester::bookHistograms( DQMStore::IBooker& iBooker, edm::Run const&, edm::EventSetup const& iSetup )
+{
+  for( auto& histoman : histo ){
+    histoman.book( iBooker, iSetup );
+  }
+}
 //--------------------------------------------------------------------------------------------------
 void SiPixelStatusHarvester::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {}
 
@@ -319,6 +327,30 @@ void SiPixelStatusHarvester::endRunProduce(edm::Run& iRun, const edm::EventSetup
                  << "Tag requested for prompt in low statistics IOV in the "<<outputBase_<<" harvester"<< std::endl;
             siPixelQualityPCL_Tag[itIOV->first] = siPixelQualityPermBad;
             siPixelQualityPrompt_Tag[itIOV->first] = siPixelQualityPermBad;            
+
+            // loop over modules to fill the PROMPT DQM plots with permanent bad components
+            std::map<int, SiPixelModuleStatus> detectorStatus = tmpSiPixelStatus.getDetectorStatus();
+            std::map<int, SiPixelModuleStatus>::iterator itModEnd = detectorStatus.end();
+            for (std::map<int, SiPixelModuleStatus>::iterator itMod = detectorStatus.begin(); itMod != itModEnd; ++itMod) {
+            
+                 int detid = itMod->first;
+                 uint32_t detId = uint32_t(detid);
+                 SiPixelModuleStatus modStatus = itMod->second;
+
+                 for (int iroc = 0; iroc < modStatus.nrocs(); ++iroc) {
+
+                       if(badPixelInfo_->IsRocBad(detId, short(iroc))){
+                         std::map<int, std::pair<int,int> > rocToOfflinePixel = pixelO2O_[detid];
+                         int row = rocToOfflinePixel[iroc].first;
+                         int column = rocToOfflinePixel[iroc].second;                                                                                                 for (int iLumi = 0; iLumi<interval;iLumi++){
+                           histo[PROMPTBADROC].fill(detId, nullptr, column, row);//, 1.0/nLumiBlock_);
+                         }
+
+                       } // if permanent BAD
+
+                 } // loop over ROCs
+
+            } // loop over modules
 
             // add empty bad components to "other" tag
             edm::LogInfo("SiPixelStatusHarvester")
@@ -559,7 +591,7 @@ bool SiPixelStatusHarvester::equal(SiPixelQuality* a, SiPixelQuality* b){
         if(detIdA!=detIdB) return false;
         else{
            unsigned short BadRocsA = badRocListA[i].BadRocs;
-           unsigned short BadRocsB = badRocListA[i].BadRocs;
+           unsigned short BadRocsB = badRocListB[i].BadRocs;
            if(BadRocsA!=BadRocsB) return false;
         }
 

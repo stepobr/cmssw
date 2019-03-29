@@ -1,9 +1,10 @@
+from __future__ import absolute_import
 
-from Mixins import _ConfigureComponent, PrintOptions
-from Mixins import _Labelable, _Unlabelable
-from Mixins import _ValidatingParameterListBase
-from ExceptionHandling import *
-from OrderedSet import OrderedSet
+from .Mixins import _ConfigureComponent, PrintOptions
+from .Mixins import _Labelable, _Unlabelable
+from .Mixins import _ValidatingParameterListBase
+from .ExceptionHandling import *
+from .OrderedSet import OrderedSet
 
 class _HardDependency(object):
     """Information relevant for when a hard dependency, 
@@ -370,6 +371,8 @@ class _ModuleSequenceType(_ConfigureComponent, _Labelable):
     def insert(self,index,item):
         """Inserts the item at the index specified"""
         _checkIfSequenceable(self, item)
+        if self._seq is None:
+            self.__dict__["_seq"] = _SequenceCollection()
         self._seq.insert(index,item)
     def remove(self, something):
         """Remove the first occurrence of 'something' (a sequence or a module)
@@ -579,7 +582,7 @@ class Schedule(_ValidatingParameterListBase,_ConfigureComponent,_Unlabelable):
     def __init__(self,*arg,**argv):
         super(Schedule,self).__init__(*arg)
         self._tasks = OrderedSet()
-        theKeys = argv.keys()
+        theKeys = list(argv.keys())
         if theKeys:
             if len(theKeys) > 1 or theKeys[0] != "tasks":
                 raise RuntimeError("The Schedule constructor can only have one keyword argument after its Path and\nEndPath arguments and it must use the keyword 'tasks'")
@@ -1897,7 +1900,14 @@ if __name__=="__main__":
             self.assertEqual(s.index(m1),0)
             self.assertEqual(s.index(m2),1)        
             self.assertEqual(s.index(m3),2)
-            
+
+            s = Sequence()
+            s.insert(0, m1)
+            self.assertEqual(s.index(m1),0)
+
+            p = Path()
+            p.insert(0, m1)
+            self.assertEqual(s.index(m1),0)
         
         def testExpandAndClone(self):
             m1 = DummyModule("m1")

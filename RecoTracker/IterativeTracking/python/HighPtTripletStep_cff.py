@@ -2,6 +2,9 @@ import FWCore.ParameterSet.Config as cms
 import RecoTracker.IterativeTracking.iterativeTkConfig as _cfg
 from Configuration.Eras.Modifier_fastSim_cff import fastSim
 
+#for dnn classifier
+from Configuration.ProcessModifiers.trackdnn_cff import trackdnn
+
 ### high-pT triplets ###
 
 # NEW CLUSTERS (remove previously used clusters)
@@ -87,7 +90,7 @@ highPtTripletStepHitDoublets = _hitPairEDProducer.clone(
     seedingLayers = "highPtTripletStepSeedLayers",
     trackingRegions = "highPtTripletStepTrackingRegions",
     layerPairs = [0,1], # layer pairs (0,1), (1,2)
-    maxElement = 0,
+    maxElement = 50000000,
     produceIntermediateHitDoublets = True,
 )
 from RecoPixelVertexing.PixelTriplets.caHitTripletEDProducer_cfi import caHitTripletEDProducer as _caHitTripletEDProducer
@@ -246,12 +249,25 @@ fastSim.toModify(highPtTripletStepTracks,TTRHBuilder = 'WithoutRefit')
 # Final selection
 from RecoTracker.FinalTrackSelectors.TrackMVAClassifierPrompt_cfi import *
 highPtTripletStep = TrackMVAClassifierPrompt.clone(
-    src	= 'highPtTripletStepTracks',
-    mva = dict(GBRForestLabel = 'MVASelectorHighPtTripletStep_Phase1'),
-    qualityCuts	= [0.2,0.3,0.4],
+     mva = dict(GBRForestLabel = 'MVASelectorHighPtTripletStep_Phase1'),
+     src = 'highPtTripletStepTracks',
+     qualityCuts = [0.2,0.3,0.4]
 )
-fastSim.toModify(highPtTripletStep,vertices = "firstStepPrimaryVerticesBeforeMixing")
+
+from RecoTracker.FinalTrackSelectors.TrackLwtnnClassifier_cfi import *
+from RecoTracker.FinalTrackSelectors.trackSelectionLwtnn_cfi import *
+trackdnn.toReplaceWith(highPtTripletStep, TrackLwtnnClassifier.clone(
+    src = 'highPtTripletStepTracks',
+    qualityCuts = [0.75, 0.775, 0.8],
+))
+
 highBetaStar_2018.toModify(highPtTripletStep,qualityCuts = [-0.2,0.3,0.4])
+pp_on_AA_2018.toModify(highPtTripletStep, 
+        mva = dict(GBRForestLabel = 'HIMVASelectorHighPtTripletStep_Phase1'),
+        qualityCuts = [-0.9, -0.3, 0.85],
+)
+
+fastSim.toModify(highPtTripletStep,vertices = "firstStepPrimaryVerticesBeforeMixing")
 
 # For Phase2PU140
 import RecoTracker.FinalTrackSelectors.multiTrackSelector_cfi
