@@ -12,6 +12,11 @@
    <Vector name="ZRanges" type="numeric" nEntries="4">
      [hgcal:zHGCalEE1], [hgcal:zHGCalHEsil1], [hgcal:zHGCalHEmix1], 
      [hgcal:zHGCalHEmix5]</Vector>
+  <Vector name="LayerCenter" type="numeric" nEntries="50">
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0</Vector>
  </ConstantsSection>
 
 <SpecParSection label="hgcalCons.xml" eval="true">
@@ -26,6 +31,7 @@
     <Parameter name="CellThickness"       value="[hgcal:CellThicknessCoarse1]"/>
     <Parameter name="CellThickness"       value="[hgcal:CellThicknessCoarse2]"/>
     <Parameter name="FirstMixedLayer"     value="-1"/>
+    <Parameter name="LayerOffset"         value="0"/>
     <Parameter name="DetectorType"        value="1"/>
     <Parameter name="Radius100to200"      value="[hgcal:rad100200P0]"/>
     <Parameter name="Radius100to200"      value="[hgcal:rad100200P1]"/>
@@ -77,6 +83,7 @@
     <Parameter name="CellThickness"       value="[hgcal:CellThicknessCoarse1]"/>
     <Parameter name="CellThickness"       value="[hgcal:CellThicknessCoarse2]"/>
     <Parameter name="FirstMixedLayer"     value="[hgcal:FirstMixedLayer]"/>
+    <Parameter name="LayerOffset"         value="28"/>
     <Parameter name="DetectorType"        value="2"/>
     <Parameter name="Radius100to200"      value="[hgcal:rad100200P0]"/>
     <Parameter name="Radius100to200"      value="[hgcal:rad100200P1]"/>
@@ -126,13 +133,14 @@
     <Parameter name="LevelTop"            value="11"/>
     <Parameter name="FirstLayer"          value="[hgcal:FirstMixedLayer]"/>
     <Parameter name="FirstMixedLayer"     value="[hgcal:FirstMixedLayer]"/>
+    <Parameter name="LayerOffset"         value="28"/>
     <Parameter name="DetectorType"        value="3"/>
     <Parameter name="WaferThickness"      value="[hgcal:ScintillatorThickness]"/>
     <Parameter name="MinimumTileSize"     value="[MinimumTileSize]"/>
     <Parameter name="NPhiBinBH"           value="360"/>
     <Parameter name="NPhiBinBH"           value="288"/>
     <Parameter name="LayerFrontBH"        value="[hgcal:FirstMixedLayer]"/>
-    <Parameter name="LayerFrontBH"        value="([hgcal:FirstMixedLayer]+4)"/>
+    <Parameter name="LayerFrontBH"        value="[hgcal:FirstMixedLayer]"/>
     <Parameter name="RMinLayerBH"         value="[hgcal:radMixL3]"/>
     <Parameter name="RMinLayerBH"         value="[hgcal:radMixL13]"/>
     <Parameter name="SlopeBottom"         value="0"/>

@@ -33,6 +33,7 @@ from Validation.RecoParticleFlow.PFMETValidation_cff import *
 from Validation.RecoParticleFlow.PFMuonValidation_cff import *
 from Validation.RecoParticleFlow.PFElectronValidation_cff import *
 from Validation.RecoParticleFlow.PFJetResValidation_cff import *
+from Validation.RecoParticleFlow.PFClusterValidation_cff import *
 from Validation.RPCRecHits.rpcRecHitValidation_cfi import *
 from Validation.DTRecHits.DTRecHitQuality_cfi import *
 from Validation.RecoTau.DQMMCValidation_cfi import *
@@ -41,6 +42,7 @@ from Validation.SiPixelPhase1ConfigV.SiPixelPhase1OfflineDQM_sourceV_cff import 
 from DQMOffline.RecoB.dqmAnalyzer_cff import *
 from Validation.RecoB.BDHadronTrackValidation_cff import *
 from Validation.Configuration.hgcalSimValid_cff import *
+from Validation.Configuration.mtdSimValid_cff import *
 from Validation.SiOuterTrackerV.OuterTrackerSourceConfigV_cff import *
 
 
@@ -91,6 +93,7 @@ globalValidation = cms.Sequence(   trackerHitsValidation
                                  + pfElectronValidationSequence
                                  + pfJetResValidationSequence
                                  + pfMuonValidationSequence
+                                 + pfClusterValidationSequence
                                  + rpcRecHitValidation_step
                                  + dtLocalRecoValidation_no2D
                                  + pfTauRunDQMValidation
@@ -160,6 +163,8 @@ globalValidationHCAL = cms.Sequence(
 
 globalValidationHGCal = cms.Sequence(hgcalValidation)
 
+globalValidationMTD = cms.Sequence()
+
 globalValidationOuterTracker = cms.Sequence(OuterTrackerSourceV)
 
 globalPrevalidationMuons = cms.Sequence(
@@ -197,3 +202,6 @@ from Configuration.Eras.Modifier_phase2_muon_cff import phase2_muon
 phase2_muon.toReplaceWith( globalValidation, _phase2_globalValidation )
 from Configuration.Eras.Modifier_pp_on_AA_2018_cff import pp_on_AA_2018
 pp_on_AA_2018.toReplaceWith(globalValidation, globalValidation.copyAndExclude([pfTauRunDQMValidation]))
+from Configuration.Eras.Modifier_phase2_timing_layer_bar_cff import phase2_timing_layer_bar
+from Configuration.Eras.Modifier_phase2_timing_layer_tile_cff import phase2_timing_layer_tile
+(phase2_timing_layer_tile | phase2_timing_layer_bar).toReplaceWith(globalValidationMTD, cms.Sequence(mtdSimValid+mtdDigiValid+mtdRecoValid))

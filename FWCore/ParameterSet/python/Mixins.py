@@ -1,4 +1,5 @@
 from __future__ import print_function
+from builtins import range, object
 import inspect
 import six
 
@@ -161,6 +162,7 @@ class _Parameterizable(object):
     def __init__(self,*arg,**kargs):
         self.__dict__['_Parameterizable__parameterNames'] = []
         self.__dict__["_isFrozen"] = False
+        self.__dict__['_Parameterizable__validator'] = None
         """The named arguments are the 'parameters' which are added as 'python attributes' to the object"""
         if len(arg) != 0:
             #raise ValueError("unnamed arguments are not allowed. Please use the syntax 'name = value' when assigning arguments.")
@@ -227,8 +229,15 @@ class _Parameterizable(object):
         return result
 
     def __addParameter(self, name, value):
+        if name == 'allowAnyLabel_':
+            self.__validator = value
+            self._isModified = True
+            return
         if not isinstance(value,_ParameterTypeBase):
-            self.__raiseBadSetAttr(name)
+            if self.__validator is not None:
+                value = self.__validator.convert_(value)
+            else:
+                self.__raiseBadSetAttr(name)
         if name in self.__dict__:
             message = "Duplicate insert of member " + name
             message += "\nThe original parameters are:\n"
@@ -239,9 +248,14 @@ class _Parameterizable(object):
         self._isModified = True
 
     def __setParameters(self,parameters):
+        v = None
         for name,value in six.iteritems(parameters):
+            if name == 'allowAnyLabel_':
+                v = value
+                continue
             self.__addParameter(name, value)
-
+        if v is not None:
+            self.__validator=v
     def __setattr__(self,name,value):
         #since labels are not supposed to have underscores at the beginning
         # I will assume that if we have such then we are setting an internal variable
@@ -656,9 +670,8 @@ class _ValidatingParameterListBase(_ValidatingListBase,_ParameterTypeBase):
         return (converter(x).value() for x in strings)
 
 def saveOrigin(obj, level):
-    frame = inspect.stack()[level+1]
-    if isinstance(frame,tuple): frame=frame[0] #python3 changes this to a tuple where the first thing is the frame
-    fInfo=inspect.getframeinfo(frame)
+    import sys
+    fInfo = inspect.getframeinfo(sys._getframe(level+1))
     obj._filename = fInfo.filename
     obj._lineNumber =fInfo.lineno
 
@@ -745,7 +758,7 @@ if __name__ == "__main__":
         def testLargeList(self):
             #lists larger than 255 entries can not be initialized
             #using the constructor
-            args = [i for i in xrange(0,300)]
+            args = [i for i in range(0,300)]
             
             t = TestList(*args)
             pdump= t.dumpPython()
@@ -827,7 +840,7 @@ if __name__ == "__main__":
                 def __init__(self):
                     self.tLPTest = tLPTest
                     self.tLPTestType = tLPTestType
-            p = tLPTest("MyType",** dict( [ ("a"+str(x), tLPTestType(x)) for x in xrange(0,300) ] ) )
+            p = tLPTest("MyType",** dict( [ ("a"+str(x), tLPTestType(x)) for x in range(0,300) ] ) )
             #check they are the same
             self.assertEqual(p.dumpPython(), eval(p.dumpPython(),{"cms": __DummyModule()}).dumpPython())
         def testSpecialImportRegistry(self):

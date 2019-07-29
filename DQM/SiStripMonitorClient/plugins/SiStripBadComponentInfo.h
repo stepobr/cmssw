@@ -30,6 +30,7 @@
 
 #include "CalibFormats/SiStripObjects/interface/SiStripQuality.h"
 #include "Geometry/Records/interface/TrackerTopologyRcd.h"
+#include "DQMServices/Core/interface/DQMStore.h"
 
 #include <fstream>
 #include <iostream>
@@ -37,11 +38,7 @@
 #include <string>
 #include <vector>
 
-class DQMStore;
-class MonitorElement;
-
 class SiStripBadComponentInfo : public DQMEDHarvester {
-
 public:
   /// Constructor
   SiStripBadComponentInfo(edm::ParameterSet const& ps);
@@ -50,21 +47,21 @@ public:
 protected:
   void endRun(edm::Run const&, edm::EventSetup const&) override;
   void dqmEndJob(DQMStore::IBooker&,
-                 DQMStore::IGetter&) override; // performed in the endJob
+                 DQMStore::IGetter&) override;  // performed in the endJob
 
 private:
   void checkBadComponents(edm::EventSetup const& eSetup);
-  void bookBadComponentHistos(DQMStore::IBooker &ibooker, DQMStore::IGetter &igetter);
-  void fillBadComponentMaps(int xbin, int component,SiStripQuality::BadComponent const& BC);
-  void createSummary(MonitorElement* me,const std::map<std::pair<int,int>,float >& map);
+  void bookBadComponentHistos(DQMStore::IBooker& ibooker, DQMStore::IGetter& igetter);
+  void fillBadComponentMaps(int xbin, int component, SiStripQuality::BadComponent const& BC);
+  void createSummary(MonitorElement* me, const std::map<std::pair<int, int>, float>& map);
 
-  MonitorElement * badAPVME_;
-  MonitorElement * badFiberME_;
-  MonitorElement * badStripME_;
+  MonitorElement* badAPVME_;
+  MonitorElement* badFiberME_;
+  MonitorElement* badStripME_;
 
-  std::map<std::pair<int,int>,float > mapBadAPV;
-  std::map<std::pair<int,int>,float > mapBadFiber;
-  std::map<std::pair<int,int>,float > mapBadStrip;
+  std::map<std::pair<int, int>, float> mapBadAPV;
+  std::map<std::pair<int, int>, float> mapBadFiber;
+  std::map<std::pair<int, int>, float> mapBadStrip;
 
   bool bookedStatus_;
   int nSubSystem_;
