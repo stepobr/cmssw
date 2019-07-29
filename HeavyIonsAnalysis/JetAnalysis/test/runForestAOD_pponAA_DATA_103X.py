@@ -32,7 +32,7 @@ process.source = cms.Source("PoolSource",
 
 # Number of events we want to process, -1 = all events
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(1)
+    input = cms.untracked.int32(10)
     )
 
 ###############################################################################
@@ -89,6 +89,12 @@ process.load('HeavyIonsAnalysis.JetAnalysis.fullJetSequence_pponAA_data_cff')
 process.akPu4Calocorr.payload = "AK4Calo"
 process.akPu4PFcorr.payload = "AK4PF"
 process.akCs4PFcorr.payload = "AK4PF"
+process.akFlowPuCs4PFcorr.payload = "AK4PF"
+process.akPu3Calocorr.payload = "AK4Calo"
+process.akPu3PFcorr.payload = "AK3PF"
+process.akCs3PFcorr.payload = "AK3PF"
+process.akFlowPuCs3PFcorr.payload = "AK3PF"
+process.akPu3PFJets.jetPtMin = 1
 process.akPu4PFJets.jetPtMin = 1
 
 process.load('HeavyIonsAnalysis.JetAnalysis.hiFJRhoAnalyzer_cff')
@@ -266,3 +272,4 @@ process.offlinePrimaryVerticesRecovery.oldVertexLabel = "offlinePrimaryVertices"
 ###############################################################################
 
 # Customization
+
