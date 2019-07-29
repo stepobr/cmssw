@@ -92,9 +92,9 @@ process.akPu4PFcorr.payload = "AK4PF"
 process.akCs4PFcorr.payload = "AK4PF"
 process.akFlowPuCs4PFcorr.payload = "AK4PF"
 process.akPu3Calocorr.payload = "AK4Calo"
-process.akPu3PFcorr.payload = "AK4PF"
-process.akCs3PFcorr.payload = "AK4PF"
-process.akFlowPuCs3PFcorr.payload = "AK4PF"
+process.akPu3PFcorr.payload = "AK3PF"
+process.akCs3PFcorr.payload = "AK3PF"
+process.akFlowPuCs3PFcorr.payload = "AK3PF"
 process.akPu3PFJets.jetPtMin = 1
 process.akPu4PFJets.jetPtMin = 1
 
