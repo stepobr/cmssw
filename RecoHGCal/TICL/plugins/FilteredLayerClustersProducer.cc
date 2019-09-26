@@ -12,6 +12,7 @@
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 
 #include "DataFormats/ParticleFlowReco/interface/PFCluster.h"
+#include "RecoLocalCalo/HGCalRecAlgos/interface/RecHitTools.h"
 
 #include "ClusterFilterFactory.h"
 #include "ClusterFilterBase.h"
@@ -23,7 +24,7 @@ public:
   FilteredLayerClustersProducer(const edm::ParameterSet&);
   ~FilteredLayerClustersProducer() override {}
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
-
+  void beginRun(edm::Run const&, edm::EventSetup const&) override;
   void produce(edm::Event&, const edm::EventSetup&) override;
 
 private:
@@ -32,6 +33,7 @@ private:
   std::string clusterFilter_;
   std::string iteration_label_;
   std::unique_ptr<const ticl::ClusterFilterBase> theFilter_;
+  hgcal::RecHitTools rhtools_;
 };
 
 DEFINE_FWK_MODULE(FilteredLayerClustersProducer);
@@ -42,10 +44,11 @@ FilteredLayerClustersProducer::FilteredLayerClustersProducer(const edm::Paramete
   clusterFilter_ = ps.getParameter<std::string>("clusterFilter");
   theFilter_ = ClusterFilterFactory::get()->create(clusterFilter_, ps);
   iteration_label_ = ps.getParameter<std::string>("iteration_label");
-
   produces<ticl::HgcalClusterFilterMask>(iteration_label_);
   produces<std::vector<float>>(iteration_label_);
 }
+
+void FilteredLayerClustersProducer::beginRun(edm::Run const&, edm::EventSetup const& es) { rhtools_.getEventSetup(es); }
 
 void FilteredLayerClustersProducer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   // hgcalMultiClusters
@@ -53,8 +56,9 @@ void FilteredLayerClustersProducer::fillDescriptions(edm::ConfigurationDescripti
   desc.add<edm::InputTag>("HGCLayerClusters", edm::InputTag("hgcalLayerClusters"));
   desc.add<edm::InputTag>("LayerClustersInputMask", edm::InputTag("hgcalLayerClusters", "InitialLayerClustersMask"));
   desc.add<std::string>("iteration_label", "iterationLabelGoesHere");
-  desc.add<std::string>("clusterFilter", "ClusterFilterByAlgo");
+  desc.add<std::string>("clusterFilter", "ClusterFilterByAlgoAndSize");
   desc.add<int>("algo_number", 9);
+  desc.add<int>("min_cluster_size", 0);
   desc.add<int>("max_cluster_size", 9999);
   descriptions.add("filteredLayerClustersProducer", desc);
 }
@@ -81,7 +85,7 @@ void FilteredLayerClustersProducer::produce(edm::Event& evt, const edm::EventSet
 
   std::unique_ptr<ticl::HgcalClusterFilterMask> filteredLayerClusters;
   if (theFilter_) {
-    filteredLayerClusters = theFilter_->filter(layerClusters, *availableLayerClusters, *layerClustersMask);
+    filteredLayerClusters = theFilter_->filter(layerClusters, *availableLayerClusters, *layerClustersMask, rhtools_);
   } else {
     filteredLayerClusters = std::move(availableLayerClusters);
   }
