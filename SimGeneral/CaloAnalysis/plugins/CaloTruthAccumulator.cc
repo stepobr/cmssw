@@ -24,7 +24,7 @@
 #include "FWCore/Framework/interface/ESHandle.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/EventSetup.h"
-#include "FWCore/Framework/interface/ProducerBase.h"
+#include "FWCore/Framework/interface/ProducesCollector.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/Utilities/interface/InputTag.h"
@@ -123,7 +123,7 @@ using DecayChain = adjacency_list<listS, vecS, directedS, VertexMotherParticlePr
 
 class CaloTruthAccumulator : public DigiAccumulatorMixMod {
 public:
-  explicit CaloTruthAccumulator(const edm::ParameterSet &config, edm::ProducerBase &mixMod, edm::ConsumesCollector &iC);
+  explicit CaloTruthAccumulator(const edm::ParameterSet &config, edm::ProducesCollector, edm::ConsumesCollector &iC);
 
 private:
   void initializeEvent(const edm::Event &event, const edm::EventSetup &setup) override;
@@ -355,7 +355,7 @@ namespace {
 }  // namespace
 
 CaloTruthAccumulator::CaloTruthAccumulator(const edm::ParameterSet &config,
-                                           edm::ProducerBase &mixMod,
+                                           edm::ProducesCollector producesCollector,
                                            edm::ConsumesCollector &iC)
     : messageCategory_("CaloTruthAccumulator"),
       maximumPreviousBunchCrossing_(config.getParameter<unsigned int>("maximumPreviousBunchCrossing")),
@@ -369,10 +369,10 @@ CaloTruthAccumulator::CaloTruthAccumulator(const edm::ParameterSet &config,
       maxPseudoRapidity_(config.getParameter<double>("MaxPseudoRapidity")),
       premixStage1_(config.getParameter<bool>("premixStage1")),
       geometryType_(-1) {
-  mixMod.produces<SimClusterCollection>("MergedCaloTruth");
-  mixMod.produces<CaloParticleCollection>("MergedCaloTruth");
+  producesCollector.produces<SimClusterCollection>("MergedCaloTruth");
+  producesCollector.produces<CaloParticleCollection>("MergedCaloTruth");
   if (premixStage1_) {
-    mixMod.produces<std::vector<std::pair<unsigned int, float>>>("MergedCaloTruth");
+    producesCollector.produces<std::vector<std::pair<unsigned int, float>>>("MergedCaloTruth");
   }
 
   iC.consumes<std::vector<SimTrack>>(simTrackLabel_);
@@ -486,6 +486,7 @@ void CaloTruthAccumulator::finalizeEvent(edm::Event &event, edm::EventSetup cons
     for (auto &sc : *(output_.pSimClusters)) {
       auto hitsAndEnergies = sc.hits_and_fractions();
       sc.clearHitsAndFractions();
+      sc.clearHitsEnergy();
       for (auto &hAndE : hitsAndEnergies) {
         const float totalenergy = m_detIdToTotalSimEnergy[hAndE.first];
         float fraction = 0.;
@@ -495,6 +496,7 @@ void CaloTruthAccumulator::finalizeEvent(edm::Event &event, edm::EventSetup cons
           edm::LogWarning(messageCategory_)
               << "TotalSimEnergy for hit " << hAndE.first << " is 0! The fraction for this hit cannot be computed.";
         sc.addRecHitAndFraction(hAndE.first, fraction);
+        sc.addHitEnergy(hAndE.second);
       }
     }
   }

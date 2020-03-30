@@ -36,7 +36,7 @@ static long algorithm(dd4hep::Detector& /* description */,
   dd4hep::Volume mother = ns.volume(args.parentName());
   dd4hep::PlacedVolume pv;
 
-  startCopyNo = args.find("startCopyNo") ? args.value<int>("StartCopyNo") : 1;
+  startCopyNo = args.find("StartCopyNo") ? args.value<int>("StartCopyNo") : 0;
   nBlades = args.value<int>("NumberOfBlades");
   bladeAngle = args.value<double>("BladeAngle");
   bladeTilt = args.value<double>("BladeTilt");
@@ -50,7 +50,7 @@ static long algorithm(dd4hep::Detector& /* description */,
   flagString = args.value<std::string>("FlagString");
 
   if (strchr(childName.c_str(), NAMESPACE_SEP) == nullptr)
-    childName = ns.name() + childName;
+    childName = ns.prepend(childName);
 
   dd4hep::Volume child = ns.volume(childName);
 

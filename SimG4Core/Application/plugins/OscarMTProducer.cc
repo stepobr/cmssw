@@ -121,12 +121,13 @@ OscarMTProducer::OscarMTProducer(edm::ParameterSet const& p, const OscarMTMaster
   produces<edm::PCaloHitContainer>("FibreHits");
   produces<edm::PCaloHitContainer>("WedgeHits");
   produces<edm::PCaloHitContainer>("HFNoseHits");
+  produces<edm::PCaloHitContainer>("TotemHitsT2Scint");
 
   //register any products
   auto& producers = m_runManagerWorker->producers();
 
   for (Producers::iterator itProd = producers.begin(); itProd != producers.end(); ++itProd) {
-    (*itProd)->registerProducts(*this);
+    (*itProd)->registerProducts(producesCollector());
   }
 }
 

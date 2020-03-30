@@ -2,7 +2,7 @@
 #include "RecoLocalTracker/SiPixelRecHits/interface/PixelCPEClusterRepair.h"
 
 // Geometry services
-#include "Geometry/TrackerGeometryBuilder/interface/PixelGeomDetUnit.h"
+#include "Geometry/CommonDetUnit/interface/PixelGeomDetUnit.h"
 #include "Geometry/TrackerGeometryBuilder/interface/RectangularPixelTopology.h"
 
 // MessageLogger
@@ -162,8 +162,8 @@ PixelCPEClusterRepair::~PixelCPEClusterRepair() {
     x.destroy();
 }
 
-PixelCPEBase::ClusterParam* PixelCPEClusterRepair::createClusterParam(const SiPixelCluster& cl) const {
-  return new ClusterParamTemplate(cl);
+std::unique_ptr<PixelCPEBase::ClusterParam> PixelCPEClusterRepair::createClusterParam(const SiPixelCluster& cl) const {
+  return std::make_unique<ClusterParamTemplate>(cl);
 }
 
 //------------------------------------------------------------------

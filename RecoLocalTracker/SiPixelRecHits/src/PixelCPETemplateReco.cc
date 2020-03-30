@@ -2,7 +2,7 @@
 #include "RecoLocalTracker/SiPixelRecHits/interface/PixelCPETemplateReco.h"
 
 // Geometry services
-#include "Geometry/TrackerGeometryBuilder/interface/PixelGeomDetUnit.h"
+#include "Geometry/CommonDetUnit/interface/PixelGeomDetUnit.h"
 #include "Geometry/TrackerGeometryBuilder/interface/RectangularPixelTopology.h"
 
 //#define DEBUG
@@ -99,8 +99,8 @@ PixelCPETemplateReco::~PixelCPETemplateReco() {
     x.destroy();
 }
 
-PixelCPEBase::ClusterParam* PixelCPETemplateReco::createClusterParam(const SiPixelCluster& cl) const {
-  return new ClusterParamTemplate(cl);
+std::unique_ptr<PixelCPEBase::ClusterParam> PixelCPETemplateReco::createClusterParam(const SiPixelCluster& cl) const {
+  return std::make_unique<ClusterParamTemplate>(cl);
 }
 
 //------------------------------------------------------------------

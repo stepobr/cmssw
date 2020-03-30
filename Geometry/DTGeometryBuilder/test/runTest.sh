@@ -3,7 +3,7 @@
 function die { echo $1: status $2 ; exit $2; }
 function checkDiff {
     FSIZE=$(stat -c%s "$1")
-    echo "The output diff is $FSIZE (it's ok if it's relatively small, e.g. less then a 1000):"
+    echo "The output diff is $FSIZE:"
     cat $1;
     if [ $FSIZE -gt 1000 ]
     then

@@ -656,7 +656,6 @@ DigiTask::DigiTask(edm::ParameterSet const& ps) : DQTask(ps) {
   _cSumQ_depth.book(ib, _emap, _subsystem);
   _cSumQvsLS_SubdetPM.book(ib, _emap, _filter_QIE8, _subsystem);
   _cSumQvsLS_SubdetPM_QIE1011.book(ib, _emap, _filter_QIE1011, _subsystem);
-  _cDigiSize_Crate.book(ib, _emap, _subsystem);
   _cADCvsTS_SubdetPM.book(ib, _emap, _filter_QIE8, _subsystem);
   _cADCvsTS_SubdetPM_QIE1011.book(ib, _emap, _filter_QIE1011, _subsystem);
 
@@ -677,13 +676,16 @@ DigiTask::DigiTask(edm::ParameterSet const& ps) : DQTask(ps) {
     _cOccupancyCut_ElectronicsuTCA.book(ib, _emap, _filter_VME, _subsystem);
     _cDigiSize_FED.book(ib, _emap, _subsystem);
   }
+  if (_ptype != fOffline) {  // else book per-lumi later.
+    _cDigiSize_Crate.book(ib, _emap, _subsystem);
+    _cOccupancy_depth.book(ib, _emap, _subsystem);
+  }
 
   _cTimingCut_SubdetPM.book(ib, _emap, _subsystem);
   _cTimingCut_depth.book(ib, _emap, _subsystem);
   _cTimingCutvsLS_SubdetPM.book(ib, _emap, _subsystem);
 
   _cOccupancyvsLS_Subdet.book(ib, _emap, _subsystem);
-  _cOccupancy_depth.book(ib, _emap, _subsystem);
   _cOccupancyCut_depth.book(ib, _emap, _subsystem);
 
   _cLETDCTimevsADC_SubdetPM.book(ib, _emap, _subsystem);
@@ -705,7 +707,7 @@ DigiTask::DigiTask(edm::ParameterSet const& ps) : DQTask(ps) {
     _cCapid_BadvsFEDvsLSmod60.book(ib, _subsystem, "BadvsLSmod60");
   }
   for (int i = 0; i < 4; ++i) {
-    constexpr unsigned int kSize = 16;
+    constexpr unsigned int kSize = 32;
     char aux[kSize];
     snprintf(aux, kSize, "%d_uTCA", i);
     _cCapidMinusBXmod4_CrateSlotuTCA[i].book(ib, _subsystem, aux);
@@ -774,23 +776,24 @@ DigiTask::DigiTask(edm::ParameterSet const& ps) : DQTask(ps) {
     }
   }
 
-  //	MARK THESE HISTOGRAMS AS LUMI BASED FOR OFFLINE PROCESSING
-  if (_ptype == fOffline) {
-    _cDigiSize_Crate.setLumiFlag();
-    //_cDigiSize_FED.setLumiFlag();
-    _cOccupancy_depth.setLumiFlag();
+  {
+    //	MARK THESE HISTOGRAMS AS LUMI BASED FOR OFFLINE PROCESSING
+    auto scope = DQMStore::IBooker::UseLumiScope(ib);
+    if (_ptype == fOffline) {
+      //_cDigiSize_FED.setLumiFlag();
+      _cDigiSize_Crate.book(ib, _emap, _subsystem);
+      _cOccupancy_depth.book(ib, _emap, _subsystem);
+    }
+
+    //	book Number of Events vs LS histogram
+    ib.setCurrentFolder(_subsystem + "/RunInfo");
+    meNumEvents1LS = ib.book1D("NumberOfEvents", "NumberOfEvents", 1, 0, 1);
+
+    //	book the flag for unknown ids and the online guy as well
+    ib.setCurrentFolder(_subsystem + "/" + _name);
+    meUnknownIds1LS = ib.book1D("UnknownIds", "UnknownIds", 1, 0, 1);
+    _unknownIdsPresent = false;
   }
-
-  //	book Number of Events vs LS histogram
-  ib.setCurrentFolder(_subsystem + "/RunInfo");
-  meNumEvents1LS = ib.book1D("NumberOfEvents", "NumberOfEvents", 1, 0, 1);
-  meNumEvents1LS->setLumiFlag();
-
-  //	book the flag for unknown ids and the online guy as well
-  ib.setCurrentFolder(_subsystem + "/" + _name);
-  meUnknownIds1LS = ib.book1D("UnknownIds", "UnknownIds", 1, 0, 1);
-  _unknownIdsPresent = false;
-  meUnknownIds1LS->setLumiFlag();
 }
 
 /* virtual */ void DigiTask::_resetMonitors(hcaldqm::UpdateFreq uf) {
@@ -1397,8 +1400,8 @@ DigiTask::DigiTask(edm::ParameterSet const& ps) : DQTask(ps) {
   }
 }
 
-/* virtual */ void DigiTask::beginLuminosityBlock(edm::LuminosityBlock const& lb, edm::EventSetup const& es) {
-  DQTask::beginLuminosityBlock(lb, es);
+/* virtual */ void DigiTask::dqmBeginLuminosityBlock(edm::LuminosityBlock const& lb, edm::EventSetup const& es) {
+  DQTask::dqmBeginLuminosityBlock(lb, es);
   if (_ptype == fOnline) {
     // Reset the bin for _cCapid_BadvsFEDvsLSmod60
     for (std::vector<uint32_t>::const_iterator it = _vhashFEDs.begin(); it != _vhashFEDs.end(); ++it) {
@@ -1408,7 +1411,7 @@ DigiTask::DigiTask(edm::ParameterSet const& ps) : DQTask(ps) {
   }
 }
 
-/* virtual */ void DigiTask::endLuminosityBlock(edm::LuminosityBlock const& lb, edm::EventSetup const& es) {
+/* virtual */ void DigiTask::dqmEndLuminosityBlock(edm::LuminosityBlock const& lb, edm::EventSetup const& es) {
   if (_ptype != fOnline)
     return;
 
@@ -1526,7 +1529,7 @@ DigiTask::DigiTask(edm::ParameterSet const& ps) : DQTask(ps) {
   _xBadCapid.reset();
 
   //	in the end always do the DQTask::endLumi
-  DQTask::endLuminosityBlock(lb, es);
+  DQTask::dqmEndLuminosityBlock(lb, es);
 }
 
 DEFINE_FWK_MODULE(DigiTask);

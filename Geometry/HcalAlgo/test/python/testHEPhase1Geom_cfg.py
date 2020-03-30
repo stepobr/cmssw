@@ -1,6 +1,6 @@
 import FWCore.ParameterSet.Config as cms
 
-process = cms.Process("DDHEPhase1Test")
+process = cms.Process("DDHEPhase1GeomTest")
 
 process.load('FWCore.MessageService.MessageLogger_cfi')
 process.source = cms.Source("EmptySource")
@@ -18,7 +18,7 @@ process.DDDetectorESProducer = cms.ESSource("DDDetectorESProducer",
                                             )
 
 process.testDump = cms.EDAnalyzer("DDTestDumpFile",
-                                  outputFileName = cms.untracked.string('HEPhase1DD4Hep.root'),
+                                  outputFileName = cms.untracked.string('hePhase1DD4Hep.root'),
                                   DDDetector = cms.ESInputTag('','DDHCalHEPhase1')
                                   )
 
