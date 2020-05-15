@@ -65,9 +65,9 @@ public:
   void run(const std::vector<int> halfstrip[CSCConstants::NUM_LAYERS][CSCConstants::NUM_HALF_STRIPS_7CFEBS]);
 
   /** Returns vector of CLCTs in the read-out time window, if any. */
-  std::vector<CSCCLCTDigi> readoutCLCTs() const;
-  std::vector<CSCCLCTDigi> readoutCLCTsME1a() const;
-  std::vector<CSCCLCTDigi> readoutCLCTsME1b() const;
+  std::vector<CSCCLCTDigi> readoutCLCTs(int nMaxCLCTs = CSCConstants::MAX_CLCTS_READOUT) const;
+  std::vector<CSCCLCTDigi> readoutCLCTsME1a(int nMaxCLCTs = CSCConstants::MAX_CLCTS_READOUT) const;
+  std::vector<CSCCLCTDigi> readoutCLCTsME1b(int nMaxCLCTs = CSCConstants::MAX_CLCTS_READOUT) const;
 
   /** Returns vector of all found CLCTs, if any. */
   std::vector<CSCCLCTDigi> getCLCTs() const;
@@ -85,11 +85,8 @@ public:
   std::vector<CSCCLCTPreTriggerDigi> preTriggerDigisME1b() const;
 
 protected:
-  /** Best LCT in this chamber, as found by the processor. */
-  CSCCLCTDigi bestCLCT[CSCConstants::MAX_CLCT_TBINS];
-
-  /** Second best LCT in this chamber, as found by the processor. */
-  CSCCLCTDigi secondCLCT[CSCConstants::MAX_CLCT_TBINS];
+  /** LCTs in this chamber, as found by the processor. */
+  CSCCLCTDigi CLCTContainer_[CSCConstants::MAX_CLCT_TBINS][CSCConstants::MAX_CLCTS_PER_PROCESSOR];
 
   /** Access routines to comparator digis. */
   bool getDigis(const CSCComparatorDigiCollection* compdc);
@@ -120,7 +117,15 @@ protected:
   virtual bool preTrigger(const PulseArray pulse, const int start_bx, int& first_bx);
 
   /* For a given clock cycle, check each half-strip if a pattern matches */
-  bool patternFinding(const PulseArray pulse, const int nStrips, const unsigned int bx_time);
+  bool patternFinding(const PulseArray pulse,
+                      const int nStrips,
+                      const unsigned int bx_time,
+                      std::map<int, std::map<int, CSCCLCTDigi::ComparatorContainer> >& hits_in_patterns);
+
+  // enum used in the comparator code logic
+  enum CLCT_CompCode { INVALID_HALFSTRIP = 65535 };
+
+  void cleanComparatorContainer(CSCCLCTDigi::ComparatorContainer& compHits) const;
 
   /* Mark the half-strips around the best half-strip as busy */
   void markBusyKeys(const int best_hstrip, const int best_patid, int quality[CSCConstants::NUM_HALF_STRIPS_7CFEBS]);

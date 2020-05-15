@@ -76,6 +76,12 @@ def synchronizeHCALHLTofflineRun3on2018data(process):
         producer.setNoiseFlagsQIE8 = cms.bool( True )
         producer.setPulseShapeFlagsQIE8 = cms.bool( True )
 
+    #----------------------------------------------------------
+    # Use 1+8p fit (PR29617) and apply HB- correction (PR26177)
+    for producer in producers_by_type(process, "HBHEPhase1Reconstructor"):
+        producer.algorithm.applyLegacyHBMCorrection = cms.bool( True )
+        producer.algorithm.chiSqSwitch = cms.double(15.0)
+
     return process
 
 def synchronizeHCALHLTofflineRun2(process):
@@ -164,47 +170,52 @@ def customiseFor2017DtUnpacking(process):
 
     return process
 
-def customiseFor28936(process):
-    """ Adapt a misconfiguration in hltBoostedDBSVAK8TagInfosPF. Issue #29203 """
-    if hasattr(process, 'hltBoostedDBSVAK8TagInfosPF'):
-      del process.hltBoostedDBSVAK8TagInfosPF.trackSelection.variableJTAParsi
+def customiseFor29512(process):
+    """Refresh configuration of ElectronNHitSeedProducer instances.
+
+    Loops over some parameters of ElectronNHitSeedProducer instances and changes their type from string to ESInputTag.
+
+    For PR https://github.com/cms-sw/cmssw/pull/29512 "ElectronNHitSeedProducer modernization"
+    """
+
+    for producer in producers_by_type(process, "ElectronNHitSeedProducer"):
+        matcherConfig = producer.matcherConfig
+        for parameter_name in ("detLayerGeom", "navSchool", "paramMagField"):
+            if hasattr(matcherConfig, parameter_name):
+                old_parameter = getattr(matcherConfig, parameter_name)
+                if old_parameter.pythonTypeName().endswith("string"):
+                    old_value = old_parameter.pythonValue()[1:-1]
+                    setattr(matcherConfig, parameter_name, cms.ESInputTag("", old_value))
+
     return process
 
-def customiseFor29049(process) :
+def customiseFor29658(process):
+    """small cleanup of CorrectedECALPFClusterProducer::fillDescriptions
+    Removes two unused parameters of CorrectedECALPFClusterProducer
+    PR: https://github.com/cms-sw/cmssw/pull/29658
+    """
+    for mod in producers_by_type(process, 'CorrectedECALPFClusterProducer'):
+        if hasattr(mod, 'energyCorrector'):
+           for parName in ['algoName', 'verticesLabel']:
+               if hasattr(mod.energyCorrector, parName):
+                  delattr(mod.energyCorrector, parName)
 
-   listHltPFRecHitHBHE=['hltParticleFlowRecHitHBHE',
-                        'hltParticleFlowRecHitHBHEForEgamma',
-                        'hltParticleFlowRecHitHBHEForEgammaUnseeded',
-                        'hltParticleFlowRecHitHBHEForMuons',
-                        'hltParticleFlowRecHitHBHERegForMuons']
-   for att in listHltPFRecHitHBHE:
-      if hasattr(process,att):
-         prod = getattr(process, att)
-         pset_navi = prod.navigator
-         if hasattr(pset_navi, "sigmaCut"): delattr(pset_navi,'sigmaCut')
-         if hasattr(pset_navi, "timeResolutionCalc"): delattr(pset_navi,'timeResolutionCalc')
-         pset_navi.name = cms.string("PFRecHitHCALDenseIdNavigator")
-         pset_navi.hcalEnums = cms.vint32(1,2)
+    return process
 
-   listHltPFRecHitHF=['hltParticleFlowRecHitHF',
-                      'hltParticleFlowRecHitHFForEgammaUnseeded']
-   for att in listHltPFRecHitHF:
-      if hasattr(process,att):
-         prod = getattr(process, att)
-         pset_navi = prod.navigator
-         if hasattr(pset_navi, "barrel"): delattr(pset_navi,'barrel')
-         if hasattr(pset_navi, "endcap"): delattr(pset_navi,'endcap')
-         pset_navi.name = cms.string("PFRecHitHCALDenseIdNavigator")
-         pset_navi.hcalEnums = cms.vint32(4)
-
-   return process
+# Use 8p fit (PR29617) and don't apply HB- correction (PR26177)
+def customiseFor29617(process):
+    for producer in producers_by_type(process, "HBHEPhase1Reconstructor"):
+        producer.algorithm.chiSqSwitch = cms.double(-1.0)
+        producer.algorithm.applyLegacyHBMCorrection = cms.bool( False )
+    return process
 
 # CMSSW version specific customizations
 def customizeHLTforCMSSW(process, menuType="GRun"):
 
     # add call to action function in proper order: newest last!
     # process = customiseFor12718(process)
-    process = customiseFor29049(process)
-    process = customiseFor28936(process)
+    process = customiseFor29512(process)
+    process = customiseFor29658(process)
+    process = customiseFor29617(process)
 
     return process

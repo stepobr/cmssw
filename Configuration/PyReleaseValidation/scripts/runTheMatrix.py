@@ -68,6 +68,7 @@ if __name__ == '__main__':
                      136.731, #2016B Photon data
                      136.7611, #2016E JetHT reMINIAOD from 80X legacy
                      136.8311, #2017F JetHT reMINIAOD from 94X reprocessing
+                     136.88811,#2018D JetHT reMINIAOD from UL processing
                      136.793, #2017C DoubleEG
                      136.874, #2018C EGamma
                      140.53, #2011 HI data
@@ -126,6 +127,11 @@ if __name__ == '__main__':
                       help='number of threads per process to use in cmsRun.',
                       dest='nThreads',
                       default=1
+                     )
+    parser.add_option('--numberEventsInLuminosityBlock',
+                      help='number of events in a luminosity block',
+                      dest='numberEventsInLuminosityBlock',
+                      default=-1
                      )
 
     parser.add_option('-n','--showMatrix',
@@ -335,6 +341,7 @@ if __name__ == '__main__':
     if opt.fromScratch: opt.fromScratch = opt.fromScratch.split(',')
     if opt.nProcs: opt.nProcs=int(opt.nProcs)
     if opt.nThreads: opt.nThreads=int(opt.nThreads)
+    if (opt.numberEventsInLuminosityBlock): opt.numberEventsInLuminosityBlock=int(opt.numberEventsInLuminosityBlock)
     if (opt.memoryOffset): opt.memoryOffset=int(opt.memoryOffset)
     if (opt.memPerCore): opt.memPerCore=int(opt.memPerCore)
 
