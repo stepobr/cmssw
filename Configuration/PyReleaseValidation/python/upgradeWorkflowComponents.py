@@ -55,6 +55,10 @@ upgradeKeys[2026] = [
     '2026D55PU',
     '2026D56',
     '2026D56PU',
+    '2026D57',
+    '2026D57PU',
+    '2026D58',
+    '2026D58PU',
 ]
 
 # pre-generation of WF numbers
@@ -816,6 +820,20 @@ upgradeProperties[2026] = {
         'Era' : 'Phase2C9',
         'ScenToRun' : ['GenSimHLBeamSpotFull','DigiFullTrigger','RecoFullGlobal', 'HARVESTFullGlobal'],
     },
+    '2026D57' : {
+        'Geom' : 'Extended2026D57',
+        'HLTmenu': '@fake2',
+        'GT' : 'auto:phase2_realistic_T15',
+        'Era' : 'Phase2C9',
+        'ScenToRun' : ['GenSimHLBeamSpotFull','DigiFullTrigger','RecoFullGlobal', 'HARVESTFullGlobal'],
+    },
+    '2026D58' : {
+        'Geom' : 'Extended2026D58',
+        'HLTmenu': '@fake2',
+        'GT' : 'auto:phase2_realistic_T15',
+        'Era' : 'Phase2C10',
+        'ScenToRun' : ['GenSimHLBeamSpotFull','DigiFullTrigger','RecoFullGlobal', 'HARVESTFullGlobal'],
+    },
 }
 
 # standard PU sequences
@@ -958,5 +976,8 @@ upgradeFragments = OrderedDict([
     ('TauToMuMuMu_14TeV_TuneCP5_cfi', UpgradeFragment(Kby(18939,189393),'TauToMuMuMu_14TeV')), # effi = 5.280e-04
     ('BdToKstarEleEle_14TeV_TuneCP5_cfi', UpgradeFragment(Kby(206,2061),'BdToKstarEleEle_14TeV')), #effi = 4.850e-02 
     ('ZpTT_1500_14TeV_TuneCP5_cfi', UpgradeFragment(Kby(9,50),'ZpTT_1500_14')),
+    ('BuMixing_BMuonFilter_forSTEAM_14TeV_TuneCP5_cfi', UpgradeFragment(Kby(900,10000),'BuMixing_14')),
+    ('Upsilon1SToMuMu_forSTEAM_14TeV_TuneCP5_cfi', UpgradeFragment(Kby(9,50),'Upsilon1SToMuMu_14')),
+    ('TenTau_E_15_500_Eta3p1_pythia8_cfi', UpgradeFragment(Kby(9,100),'TenTau_15_500_Eta3p1')),
 ])
 
