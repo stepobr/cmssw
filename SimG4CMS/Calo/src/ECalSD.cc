@@ -3,6 +3,7 @@
 // Description: Sensitive Detector class for electromagnetic calorimeters
 ///////////////////////////////////////////////////////////////////////////////
 #include "SimG4CMS/Calo/interface/ECalSD.h"
+#include "SimG4CMS/Calo/interface/EcalDumpGeometry.h"
 #include "SimG4Core/Notification/interface/TrackInformation.h"
 #include "Geometry/EcalCommonData/interface/EcalBarrelNumberingScheme.h"
 #include "Geometry/EcalCommonData/interface/EcalBaseNumber.h"
@@ -60,7 +61,8 @@ ECalSD::ECalSD(const std::string& name,
   edm::ParameterSet m_EC = p.getParameter<edm::ParameterSet>("ECalSD");
   useBirk = m_EC.getParameter<bool>("UseBirkLaw");
   useBirkL3 = m_EC.getParameter<bool>("BirkL3Parametrization");
-  birk1 = m_EC.getParameter<double>("BirkC1") * (g / (MeV * cm2));
+  double bunit = (CLHEP::g / (CLHEP::MeV * CLHEP::cm2));
+  birk1 = m_EC.getParameter<double>("BirkC1") * bunit;
   birk2 = m_EC.getParameter<double>("BirkC2");
   birk3 = m_EC.getParameter<double>("BirkC3");
   birkSlope = m_EC.getParameter<double>("BirkSlope");
@@ -72,6 +74,7 @@ ECalSD::ECalSD(const std::string& name,
   bool nullNS = m_EC.getUntrackedParameter<bool>("NullNumbering", false);
   storeRL = m_EC.getUntrackedParameter<bool>("StoreRadLength", false);
   scaleRL = m_EC.getUntrackedParameter<double>("ScaleRadLength", 1.0);
+  int dumpGeom = m_EC.getUntrackedParameter<int>("DumpGeometry", 0);
 
   //Changes for improved timing simulation
   storeLayerTimeSim = m_EC.getUntrackedParameter<bool>("StoreLayerTimeSim", false);
@@ -100,19 +103,27 @@ ECalSD::ECalSD(const std::string& name,
 #ifdef EDM_ML_DEBUG
   edm::LogVerbatim("EcalSim") << "Names (Depth 1):" << depth1Name << " (Depth 2):" << depth2Name << std::endl;
 #endif
+  int type(-1);
+  bool dump(false);
   EcalNumberingScheme* scheme = nullptr;
   if (nullNS) {
     scheme = nullptr;
   } else if (name == "EcalHitsEB") {
     scheme = dynamic_cast<EcalNumberingScheme*>(new EcalBarrelNumberingScheme());
+    type = 0;
+    dump = ((dumpGeom % 10) > 0);
   } else if (name == "EcalHitsEE") {
     scheme = dynamic_cast<EcalNumberingScheme*>(new EcalEndcapNumberingScheme());
+    type = 1;
+    dump = (((dumpGeom / 10) % 10) > 0);
   } else if (name == "EcalHitsES") {
     if (isItTB)
       scheme = dynamic_cast<EcalNumberingScheme*>(new ESTBNumberingScheme());
     else
       scheme = dynamic_cast<EcalNumberingScheme*>(new EcalPreshowerNumberingScheme());
     useWeight = false;
+    type = 2;
+    dump = (((dumpGeom / 100) % 10) > 0);
   } else {
     edm::LogWarning("EcalSim") << "ECalSD: ReadoutName not supported";
   }
@@ -123,8 +134,8 @@ ECalSD::ECalSD(const std::string& name,
   edm::LogVerbatim("EcalSim") << "Constructing a ECalSD  with name " << GetName();
 #endif
   if (useWeight) {
-    edm::LogVerbatim("EcalSim") << "ECalSD:: Use of Birks law is set to      " << useBirk
-                                << "        with three constants kB = " << birk1 << ", C1 = " << birk2
+    edm::LogVerbatim("EcalSim") << "ECalSD:: Use of Birks law is set to " << useBirk
+                                << " with three constants kB = " << birk1 / bunit << ", C1 = " << birk2
                                 << ", C2 = " << birk3 << "\n         Use of L3 parametrization " << useBirkL3
                                 << " with slope " << birkSlope << " and cut off " << birkCut << "\n"
                                 << "         Slope for Light yield is set to " << slopeLY;
@@ -160,6 +171,11 @@ ECalSD::ECalSD(const std::string& name,
       g2L_[k] = 0;
   }
 #endif
+  if (dump) {
+    const auto& lvNames = clg.logicalNames(name);
+    EcalDumpGeometry geom(lvNames, type);
+    geom.update();
+  }
 }
 
 ECalSD::~ECalSD() { delete numberingScheme_; }
@@ -208,6 +224,21 @@ double ECalSD::getEnergyDeposit(const G4Step* aStep) {
   edm::LogVerbatim("EcalSim") << lv->GetName() << " Light Collection Efficiency " << weight << ":" << wt1
                               << " wt2= " << wt2 << " Weighted Energy Deposit " << edep / MeV << " MeV";
 #endif
+  return edep;
+}
+
+double ECalSD::EnergyCorrected(const G4Step& step, const G4Track* track) {
+  double edep = step.GetTotalEnergyDeposit();
+  const G4StepPoint* hitPoint = step.GetPreStepPoint();
+  const G4LogicalVolume* lv = hitPoint->GetTouchable()->GetVolume(0)->GetLogicalVolume();
+
+  if (useWeight && !any(noWeight, lv)) {
+    currentLocalPoint = setToLocal(hitPoint->GetPosition(), hitPoint->GetTouchable());
+    auto ite = xtalLMap.find(lv);
+    crystalLength = (ite == xtalLMap.end()) ? 230.0 : std::abs(ite->second);
+    crystalDepth = (ite == xtalLMap.end()) ? 0.0 : (std::abs(0.5 * (ite->second) + currentLocalPoint.z()));
+    edep *= curve_LY(lv) * getResponseWt(track);
+  }
   return edep;
 }
 

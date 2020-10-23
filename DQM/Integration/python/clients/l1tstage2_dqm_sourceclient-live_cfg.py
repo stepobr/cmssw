@@ -13,12 +13,15 @@ if 'unitTest=True' in sys.argv:
 
 if unitTest:
     process.load("DQM.Integration.config.unittestinputsource_cfi")
+    from DQM.Integration.config.unittestinputsource_cfi import options
 else:
     # Live Online DQM in P5
     process.load("DQM.Integration.config.inputsource_cfi")
+    from DQM.Integration.config.inputsource_cfi import options
 
 # # Testing in lxplus
 # process.load("DQM.Integration.config.fileinputsource_cfi")
+# from DQM.Integration.config.fileinputsource_cfi import options
 # process.load("FWCore.MessageLogger.MessageLogger_cfi")
 # process.MessageLogger.cerr.FwkReport.reportEvery = 1
 
@@ -39,9 +42,11 @@ process.load("DQM.Integration.config.environment_cfi")
 
 process.dqmEnv.subSystemFolder = "L1T"
 process.dqmSaver.tag = "L1T"
-process.DQMStore.referenceFileName = "/dqmdata/dqm/reference/l1t_reference.root"
+process.dqmSaver.runNumber = options.runNumber
+process.dqmSaverPB.tag = "L1T"
+process.dqmSaverPB.runNumber = options.runNumber
 
-process.dqmEndPath = cms.EndPath(process.dqmEnv * process.dqmSaver)
+process.dqmEndPath = cms.EndPath(process.dqmEnv * process.dqmSaver * process.dqmSaverPB)
 
 #--------------------------------------------------
 # Standard Unpacking Path
@@ -110,7 +115,6 @@ process.l1tStage2MonitorClientPath = cms.Path(process.l1tStage2MonitorClient)
 
 # Cosmic run
 if (process.runType.getRunType() == process.runType.cosmic_run):
-    process.DQMStore.referenceFileName = "/dqmdata/dqm/reference/l1t_reference_cosmic.root"
     # Remove Quality Tests for L1T Muon Subsystems since they are not optimized yet for cosmics
     process.l1tStage2MonitorClient.remove(process.l1TStage2uGMTQualityTests)
     process.l1tStage2MonitorClient.remove(process.l1TStage2EMTFQualityTests)
@@ -121,7 +125,6 @@ if (process.runType.getRunType() == process.runType.cosmic_run):
 
 # Heavy-Ion run
 if (process.runType.getRunType() == process.runType.hi_run):
-    process.DQMStore.referenceFileName = "/dqmdata/dqm/reference/l1t_reference_hi.root"
     process.onlineMetaDataDigis.onlineMetaDataInputLabel = cms.InputTag("rawDataRepacker")
     process.onlineMetaDataRawToDigi.onlineMetaDataInputLabel = cms.InputTag("rawDataRepacker")
     process.castorDigis.InputLabel = cms.InputTag("rawDataRepacker")
