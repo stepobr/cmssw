@@ -1,6 +1,6 @@
 import FWCore.ParameterSet.Config as cms
 
-from HeavyIonsAnalysis.JetAnalysis.jets.akCs4PFJetSequence_pponPbPb_mc_cff import *
+from HeavyIonsAnalysis.JetAnalysis.akCs4PFJetSequence_pponPbPb_mc_cff import *
 
 import RecoHI.HiJetAlgos.particleTowerProducer_cfi as _mod
 PFTowers = _mod.particleTowerProducer.clone(useHF = True,
