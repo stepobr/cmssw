@@ -1042,23 +1042,23 @@ HiInclusiveJetAnalyzer::analyze(const Event& iEvent,
       jets_.jtPfMUM[jets_.nref] = 0;
     }
 
-    if(isMC_){
+ //    if(isMC_){
 
-      for(UInt_t i = 0; i < genparts->size(); ++i){
-	const reco::GenParticle& p = (*genparts)[i];
-	if ( p.status()!=1 || p.charge()==0) continue;
-	double dr = deltaR(jet,p);
-	if(dr < rParam){
-	  double ppt = p.pt();
-	  jets_.genChargedSum[jets_.nref] += ppt;
-	  if(ppt > hardPtMin_) jets_.genHardSum[jets_.nref] += ppt;
-	  if(p.collisionId() == 0){
-	    jets_.signalChargedSum[jets_.nref] += ppt;
-	    if(ppt > hardPtMin_) jets_.signalHardSum[jets_.nref] += ppt;
-	  }
-	}
-      }
-    }
+ //      for(UInt_t i = 0; i < genparts->size(); ++i){
+	// const reco::GenParticle& p = (*genparts)[i];
+	// if ( p.status()!=1 || p.charge()==0) continue;
+	// double dr = deltaR(jet,p);
+	// if(dr < rParam){
+	//   double ppt = p.pt();
+	//   jets_.genChargedSum[jets_.nref] += ppt;
+	//   if(ppt > hardPtMin_) jets_.genHardSum[jets_.nref] += ppt;
+	//   if(p.collisionId() == 0){
+	//     jets_.signalChargedSum[jets_.nref] += ppt;
+	//     if(ppt > hardPtMin_) jets_.signalHardSum[jets_.nref] += ppt;
+	//   }
+	// }
+ //      }
+ //    }
 
     if(isMC_){
       const reco::GenJet * genjet = jet.genJet();
@@ -1127,38 +1127,38 @@ HiInclusiveJetAnalyzer::analyze(const Event& iEvent,
       
       jets_.refparton_flavorForB[jets_.nref] = jet.partonFlavour();
 
-      if(jet.genParton()){
-	// matched partons
-	const reco::GenParticle & parton = *jet.genParton();
+ //      if(jet.genParton()){
+	// // matched partons
+	// const reco::GenParticle & parton = *jet.genParton();
 
-	jets_.refparton_pt[jets_.nref] = parton.pt();
-	jets_.refparton_flavor[jets_.nref] = parton.pdgId();
+	// jets_.refparton_pt[jets_.nref] = parton.pt();
+	// jets_.refparton_flavor[jets_.nref] = parton.pdgId();
 
-	if(saveBfragments_ && abs(jets_.refparton_flavorForB[jets_.nref])==5){
+	// if(saveBfragments_ && abs(jets_.refparton_flavorForB[jets_.nref])==5){
 
-	  usedStringPts.clear();
+	//   usedStringPts.clear();
 
-	  // uncomment this if you want to know the ugly truth about parton matching -matt
-	  //if(jet.pt() > 50 &&abs(parton.pdgId())!=5 && parton.pdgId()!=21)
-	  // cout<<" Identified as a b, but doesn't match b or gluon, id = "<<parton.pdgId()<<endl;
+	//   // uncomment this if you want to know the ugly truth about parton matching -matt
+	//   //if(jet.pt() > 50 &&abs(parton.pdgId())!=5 && parton.pdgId()!=21)
+	//   // cout<<" Identified as a b, but doesn't match b or gluon, id = "<<parton.pdgId()<<endl;
 
-	  jets_.bJetIndex[jets_.bMult] = jets_.nref;
-	  jets_.bStatus[jets_.bMult] = parton.status();
-	  jets_.bVx[jets_.bMult] = parton.vx();
-	  jets_.bVy[jets_.bMult] = parton.vy();
-	  jets_.bVz[jets_.bMult] = parton.vz();
-	  jets_.bPt[jets_.bMult] = parton.pt();
-	  jets_.bEta[jets_.bMult] = parton.eta();
-	  jets_.bPhi[jets_.bMult] = parton.phi();
-	  jets_.bPdg[jets_.bMult] = parton.pdgId();
-	  jets_.bChg[jets_.bMult] = parton.charge();
-	  jets_.bMult++;
-	  saveDaughters(parton);
-	}
-      } else {
-	jets_.refparton_pt[jets_.nref] = -999;
-	jets_.refparton_flavor[jets_.nref] = -999;
-      }
+	//   jets_.bJetIndex[jets_.bMult] = jets_.nref;
+	//   jets_.bStatus[jets_.bMult] = parton.status();
+	//   jets_.bVx[jets_.bMult] = parton.vx();
+	//   jets_.bVy[jets_.bMult] = parton.vy();
+	//   jets_.bVz[jets_.bMult] = parton.vz();
+	//   jets_.bPt[jets_.bMult] = parton.pt();
+	//   jets_.bEta[jets_.bMult] = parton.eta();
+	//   jets_.bPhi[jets_.bMult] = parton.phi();
+	//   jets_.bPdg[jets_.bMult] = parton.pdgId();
+	//   jets_.bChg[jets_.bMult] = parton.charge();
+	//   jets_.bMult++;
+	//   //saveDaughters(parton);
+	// }
+ //      } else {
+	 jets_.refparton_pt[jets_.nref] = -999;
+	 jets_.refparton_flavor[jets_.nref] = -999;
+ //      }
     }
     jets_.nref++;
   }

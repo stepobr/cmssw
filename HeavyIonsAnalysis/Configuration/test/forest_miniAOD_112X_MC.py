@@ -24,7 +24,7 @@ process.HiForestInfo.info = cms.vstring("HiForest, miniAOD, 103X, data")
 process.source = cms.Source("PoolSource",
     duplicateCheckMode = cms.untracked.string("noDuplicateCheck"),
     fileNames = cms.untracked.vstring(
-        "file:step2.root"
+        "file:/eos/cms/store/relval/CMSSW_11_2_0_pre8/RelValPyquen_DiJet_pt80to120_2760GeV_2021/MINIAODSIM/PU_112X_mcRun3_2021_realistic_HI_v11-v1/00000/2485ec38-a42f-4499-bb9f-cba185edd85a.root"
         ),
     )
 
