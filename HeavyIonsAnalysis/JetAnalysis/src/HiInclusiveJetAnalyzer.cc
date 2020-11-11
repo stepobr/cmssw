@@ -52,6 +52,7 @@ HiInclusiveJetAnalyzer::HiInclusiveJetAnalyzer(const edm::ParameterSet& iConfig)
   doSubJets_ = iConfig.getUntrackedParameter<bool>("doSubJets",0);
   doJetConstituents_ = iConfig.getUntrackedParameter<bool>("doJetConstituents", false);
   doGenSubJets_ = iConfig.getUntrackedParameter<bool>("doGenSubJets", false);
+  if (doGenSubJets_)
   subjetGenTag_ = consumes<reco::JetView> (iConfig.getUntrackedParameter<InputTag>("subjetGenTag"));
 
   //reWTA reclustering
@@ -90,8 +91,8 @@ HiInclusiveJetAnalyzer::HiInclusiveJetAnalyzer(const edm::ParameterSet& iConfig)
   useVtx_ = iConfig.getUntrackedParameter<bool>("useVtx",false);
   useRawPt_ = iConfig.getUntrackedParameter<bool>("useRawPt",true);
 
-  doLifeTimeTagging_ = iConfig.getUntrackedParameter<bool>("doLifeTimeTagging",false);
-  doLifeTimeTaggingExtras_ = iConfig.getUntrackedParameter<bool>("doLifeTimeTaggingExtras",true);
+  doLifeTimeTagging_ = iConfig.getUntrackedParameter<bool>("doLifeTimeTagging",true);
+  doLifeTimeTaggingExtras_ = iConfig.getUntrackedParameter<bool>("doLifeTimeTaggingExtras",false);
   saveBfragments_  = iConfig.getUntrackedParameter<bool>("saveBfragments",false);
 
   pfCandidateLabel_ = consumes<edm::View<pat::PackedCandidate>>(iConfig.getUntrackedParameter<edm::InputTag>("pfCandidateLabel"));
@@ -102,7 +103,7 @@ HiInclusiveJetAnalyzer::HiInclusiveJetAnalyzer(const edm::ParameterSet& iConfig)
   }
   
   doExtraCTagging_ = iConfig.getUntrackedParameter<bool>("doExtraCTagging",false);
-
+  if(isMC_)
   genParticleSrc_ = consumes<reco::GenParticleCollection>(iConfig.getUntrackedParameter<edm::InputTag>("genParticles"));
 
   if(doLifeTimeTagging_){
@@ -600,9 +601,10 @@ HiInclusiveJetAnalyzer::analyze(const Event& iEvent,
 
   edm::Handle<edm::View<pat::PackedCandidate>> pfCandidates;
   iEvent.getByToken(pfCandidateLabel_,pfCandidates);  
-
+  if(isMC_){
   edm::Handle<reco::GenParticleCollection> genparts;
   iEvent.getByToken(genParticleSrc_,genparts);
+  }
 
 
   // get tower information

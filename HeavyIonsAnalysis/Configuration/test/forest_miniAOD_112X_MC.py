@@ -113,8 +113,7 @@ process.TFileService = cms.Service("TFileService",
 # jets
 
 # jet reco sequence
-process.load('HeavyIonsAnalysis.JetAnalysis.fullJetSequence_pponAA_MB_cff')
-
+process.load('HeavyIonsAnalysis.JetAnalysis.akCs4PFJetSequence_pponPbPb_mc_cff')
 
 ################################
 
@@ -147,7 +146,7 @@ process.forest = cms.Path(
     # +
     # process.ggHiNtuplizer
     #+
-    process.jetSequence
+    process.akCs4PFJetSequence
     )
 
 #customisation
